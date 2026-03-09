@@ -3,6 +3,9 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.database import engine, Base
 from app.routes import auth
 from app.routes import profile
+from app.routes import goals
+from app.models import goal
+
 
 app = FastAPI()
 
@@ -28,3 +31,4 @@ def home():
 # Include routes
 app.include_router(auth.router)
 app.include_router(profile.router)
+app.include_router(goals.router)

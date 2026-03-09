@@ -1,6 +1,7 @@
 import { Link, useNavigate } from "react-router-dom";
 import { useState } from "react";
 import API from "../api/axios";
+import { FaEye, FaEyeSlash } from "react-icons/fa";
 
 export default function Register() {
 
@@ -12,6 +13,8 @@ export default function Register() {
     password: "",
     risk_profile: "moderate"
   });
+
+  const [showPassword, setShowPassword] = useState(false);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -59,21 +62,24 @@ export default function Register() {
       </div>
 
       {/* RIGHT FORM SECTION */}
-      <div className="flex items-center justify-center bg-gray-50 p-12">
+      <div className="flex items-center justify-center bg-gray-50 px-12 py-16">
 
         <div className="w-[420px]">
 
           {/* Logo */}
-          <div className="flex items-center gap-3 mb-10">
-            <div className="bg-emerald-600 text-white p-3 rounded-lg">
+          <div className="flex items-center gap-3 mb-12">
+
+            <div className="bg-emerald-600 text-white w-10 h-10 flex items-center justify-center rounded-lg text-lg">
               ↗
             </div>
 
             <h1 className="text-xl font-semibold">
               WealthTrack
             </h1>
+
           </div>
 
+          {/* Heading */}
           <h2 className="text-4xl font-bold mb-2">
             Create your account
           </h2>
@@ -127,7 +133,7 @@ export default function Register() {
               <div className="relative mt-2">
 
                 <input
-                  type="password"
+                  type={showPassword ? "text" : "password"}
                   placeholder="Create a password"
                   required
                   className="w-full p-4 rounded-lg bg-gray-200 outline-none focus:ring-2 focus:ring-emerald-500"
@@ -136,9 +142,13 @@ export default function Register() {
                   }
                 />
 
-                <span className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500">
-                  👁
-                </span>
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500"
+                >
+                  {showPassword ? <FaEyeSlash /> : <FaEye />}
+                </button>
 
               </div>
             </div>
@@ -155,9 +165,18 @@ export default function Register() {
                   setForm({ ...form, risk_profile: e.target.value })
                 }
               >
-                <option value="conservative">Conservative</option>
-                <option value="moderate">Moderate</option>
-                <option value="aggressive">Aggressive</option>
+                <option value="conservative">
+                  Conservative
+                </option>
+
+                <option value="moderate">
+                  Moderate
+                </option>
+
+                <option value="aggressive">
+                  Aggressive
+                </option>
+
               </select>
             </div>
 
@@ -189,4 +208,3 @@ export default function Register() {
     </div>
   );
 }
-

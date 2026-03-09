@@ -1,5 +1,6 @@
 import { Link, useNavigate } from "react-router-dom";
 
+
 export default function Navbar() {
 
   const navigate = useNavigate();
@@ -30,6 +31,8 @@ export default function Navbar() {
         <Link to="/profile" className="hover:opacity-80">
           Profile
         </Link>
+
+        <Link to="/goals">Goals</Link>
 
         <button
           onClick={handleLogout}

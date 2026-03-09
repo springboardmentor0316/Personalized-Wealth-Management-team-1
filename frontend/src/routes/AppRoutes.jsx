@@ -1,24 +1,22 @@
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import ProtectedRoute from "../components/ProtectedRoute";
 import Layout from "../components/Layout";
-
 import Login from "../pages/Login";
 import Register from "../pages/Register";
 import Dashboard from "../pages/Dashboard";
 import Profile from "../pages/Profile";
+import Goals from "../pages/Goals";
 
 export default function AppRoutes() {
-
   return (
     <BrowserRouter>
-
       <Routes>
 
         {/* Public Routes */}
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
 
-        {/* Layout Routes */}
+        {/* Protected Routes with Layout */}
         <Route element={<Layout />}>
 
           <Route
@@ -39,13 +37,21 @@ export default function AppRoutes() {
             }
           />
 
+          <Route
+            path="/goals"
+            element={
+              <ProtectedRoute>
+                <Goals />
+              </ProtectedRoute>
+            }
+          />
+
         </Route>
 
+        {/* Default Redirect */}
         <Route path="/" element={<Navigate to="/login" />} />
 
       </Routes>
-
     </BrowserRouter>
   );
 }
-
