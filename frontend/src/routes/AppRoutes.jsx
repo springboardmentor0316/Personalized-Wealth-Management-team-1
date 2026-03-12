@@ -9,6 +9,9 @@ import Goals from "../pages/Goals";
 import Portfolio from "../pages/Portfolio";
 
 export default function AppRoutes() {
+
+  const token = localStorage.getItem("access_token");
+
   return (
     <BrowserRouter>
       <Routes>
@@ -17,7 +20,7 @@ export default function AppRoutes() {
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
 
-        {/* Protected Routes with Layout */}
+        {/* Protected Routes */}
         <Route element={<Layout />}>
 
           <Route
@@ -59,7 +62,14 @@ export default function AppRoutes() {
         </Route>
 
         {/* Default Redirect */}
-        <Route path="/" element={<Navigate to="/login" />} />
+        <Route
+          path="/"
+          element={
+            token
+              ? <Navigate to="/dashboard" />
+              : <Navigate to="/login" />
+          }
+        />
 
       </Routes>
     </BrowserRouter>

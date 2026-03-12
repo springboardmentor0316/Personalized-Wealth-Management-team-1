@@ -1,18 +1,18 @@
-import Navbar from "./Navbar";
+import Sidebar from "./Sidebar";
 import { Outlet } from "react-router-dom";
 
 export default function Layout() {
-
   return (
-    <div className="h-screen flex flex-col">
+    <div className="flex h-screen">
 
-      <Navbar />
+      {/* Sidebar */}
+      <Sidebar />
 
-      <main className="flex-1 bg-gray-50">
+      {/* Page Content */}
+      <main className="flex-1 bg-gray-50 overflow-y-auto">
         <Outlet />
       </main>
 
     </div>
   );
 }
-
