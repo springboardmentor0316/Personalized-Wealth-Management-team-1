@@ -6,6 +6,7 @@ import Register from "../pages/Register";
 import Dashboard from "../pages/Dashboard";
 import Profile from "../pages/Profile";
 import Goals from "../pages/Goals";
+import Portfolio from "../pages/Portfolio";
 
 export default function AppRoutes() {
   return (
@@ -42,6 +43,15 @@ export default function AppRoutes() {
             element={
               <ProtectedRoute>
                 <Goals />
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/portfolio"
+            element={
+              <ProtectedRoute>
+                <Portfolio />
               </ProtectedRoute>
             }
           />

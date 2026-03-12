@@ -32,7 +32,13 @@ export default function Navbar() {
           Profile
         </Link>
 
-        <Link to="/goals">Goals</Link>
+        <Link to="/goals" className="hover:opacity-80">
+          Goals
+        </Link>
+
+        <Link to="/portfolio" className="hover:opacity-80">
+          Portfolio
+        </Link>
 
         <button
           onClick={handleLogout}
