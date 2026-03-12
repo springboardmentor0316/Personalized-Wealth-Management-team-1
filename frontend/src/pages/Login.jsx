@@ -23,7 +23,7 @@ export default function Login() {
       localStorage.setItem("access_token", res.data.access_token);
       localStorage.setItem("refresh_token", res.data.refresh_token);
 
-      navigate("/profile");
+      navigate("/dashboard");
 
     } catch (err) {
       setError("Invalid email or password");
