@@ -1,10 +1,15 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+
 from app.database import engine, Base
+from app.models.goal import Goal
+from app.models.investment import Investment
+from app.models.refresh_token import RefreshToken
+from app.models.user import User
 from app.routes import auth
-from app.routes import profile
 from app.routes import goals
-from app.models import goal
+from app.routes import investments
+from app.routes import profile
 
 
 app = FastAPI()
@@ -32,3 +37,4 @@ def home():
 app.include_router(auth.router)
 app.include_router(profile.router)
 app.include_router(goals.router)
+app.include_router(investments.router)

@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 import API from "../api/axios";
 
 export default function Portfolio() {
@@ -14,6 +14,13 @@ export default function Portfolio() {
   const [currentValue, setCurrentValue] = useState("");
   const [lastPrice, setLastPrice] = useState("");
 
+  const formatCurrency = (value) =>
+    new Intl.NumberFormat("en-IN", {
+      style: "currency",
+      currency: "INR",
+      minimumFractionDigits: 2,
+    }).format(Number(value || 0));
+
   useEffect(() => {
     fetchInvestments();
   }, []);
@@ -21,7 +28,7 @@ export default function Portfolio() {
   // Fetch Investments
   const fetchInvestments = async () => {
     try {
-      const res = await API.get("/investments");
+      const res = await API.get("/investments/");
       setInvestments(res.data);
       setLoading(false);
     } catch (err) {
@@ -45,9 +52,9 @@ export default function Portfolio() {
     }
 
     try {
-      await API.post("/investments", {
+      await API.post("/investments/", {
         asset_type: assetType,
-        symbol: symbol,
+        symbol,
         units: Number(units),
         avg_buy_price: Number(avgBuyPrice),
         cost_basis: Number(costBasis),
@@ -67,7 +74,11 @@ export default function Portfolio() {
       fetchInvestments();
     } catch (err) {
       console.error(err);
-      alert("Failed to create investment");
+      const message =
+        err.response?.data?.detail ||
+        err.message ||
+        "Failed to create investment";
+      alert(Array.isArray(message) ? JSON.stringify(message) : message);
     }
   };
 
@@ -92,7 +103,9 @@ export default function Portfolio() {
   );
   const totalGainLoss = totalCurrentValue - totalCostBasis;
   const gainLossPercent =
-    totalCostBasis > 0 ? ((totalGainLoss / totalCostBasis) * 100).toFixed(2) : 0;
+    totalCostBasis > 0
+      ? ((totalGainLoss / totalCostBasis) * 100).toFixed(2)
+      : 0;
 
   if (loading) {
     return (
@@ -110,11 +123,11 @@ export default function Portfolio() {
       <div className="grid grid-cols-4 gap-4 mb-8">
         <div className="bg-white p-4 rounded-lg shadow">
           <p className="text-gray-500 text-sm">Total Cost Basis</p>
-          <p className="text-xl font-bold">₹{totalCostBasis.toFixed(2)}</p>
+          <p className="text-xl font-bold">{formatCurrency(totalCostBasis)}</p>
         </div>
         <div className="bg-white p-4 rounded-lg shadow">
           <p className="text-gray-500 text-sm">Current Value</p>
-          <p className="text-xl font-bold">₹{totalCurrentValue.toFixed(2)}</p>
+          <p className="text-xl font-bold">{formatCurrency(totalCurrentValue)}</p>
         </div>
         <div className="bg-white p-4 rounded-lg shadow">
           <p className="text-gray-500 text-sm">Gain/Loss</p>
@@ -123,7 +136,7 @@ export default function Portfolio() {
               totalGainLoss >= 0 ? "text-green-600" : "text-red-600"
             }`}
           >
-            ₹{totalGainLoss.toFixed(2)}
+            {formatCurrency(totalGainLoss)}
           </p>
         </div>
         <div className="bg-white p-4 rounded-lg shadow">
@@ -248,16 +261,16 @@ export default function Portfolio() {
                       <strong>Units:</strong> {inv.units}
                     </p>
                     <p>
-                      <strong>Avg Price:</strong> ₹{inv.avg_buy_price}
+                      <strong>Avg Price:</strong> {formatCurrency(inv.avg_buy_price)}
                     </p>
                   </div>
 
                   <div>
                     <p>
-                      <strong>Cost Basis:</strong> ₹{inv.cost_basis}
+                      <strong>Cost Basis:</strong> {formatCurrency(inv.cost_basis)}
                     </p>
                     <p>
-                      <strong>Current Value:</strong> ₹{inv.current_value}
+                      <strong>Current Value:</strong> {formatCurrency(inv.current_value)}
                     </p>
                   </div>
 
@@ -267,7 +280,7 @@ export default function Portfolio() {
                         gainLoss >= 0 ? "text-green-600" : "text-red-600"
                       }`}
                     >
-                      Gain/Loss: ₹{gainLoss.toFixed(2)}
+                      Gain/Loss: {formatCurrency(gainLoss)}
                     </p>
                     <p
                       className={`font-semibold ${

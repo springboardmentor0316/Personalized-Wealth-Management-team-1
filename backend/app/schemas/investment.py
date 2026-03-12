@@ -1,8 +1,11 @@
-from pydantic import BaseModel
 from datetime import datetime
+from typing import Optional
+from pydantic import BaseModel
+
+from app.models.investment import AssetType
 
 class InvestmentCreate(BaseModel):
-    asset_type: str
+    asset_type: AssetType
     symbol: str
     units: float
     avg_buy_price: float
@@ -18,14 +21,14 @@ class InvestmentUpdate(BaseModel):
 class InvestmentResponse(BaseModel):
     id: int
     user_id: int
-    asset_type: str
+    asset_type: AssetType
     symbol: str
     units: float
     avg_buy_price: float
     cost_basis: float
     current_value: float
     last_price: float
-    last_price_at: datetime = None
+    last_price_at: Optional[datetime] = None
     created_at: datetime
 
     class Config:

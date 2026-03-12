@@ -1,9 +1,10 @@
+import enum
 from sqlalchemy import Column, Integer, String, Numeric, Enum, ForeignKey, TIMESTAMP
 from sqlalchemy.sql import func
-from app.database import Base
-import enum
 
-class AssetType(enum.Enum):
+from app.database import Base
+
+class AssetType(str, enum.Enum):
     stock = "stock"
     etf = "etf"
     mutual_fund = "mutual_fund"
