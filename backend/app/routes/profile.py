@@ -26,19 +26,19 @@ def get_current_user(
             raise HTTPException(
                 status_code=401,
                 detail="Invalid token payload"
-    )
+            )
 
     except ExpiredSignatureError:
         raise HTTPException(
-        status_code=401,
-        detail="Token has expired"
-    )
+            status_code=401,
+            detail="Token has expired"
+        )
 
     except JWTError:
         raise HTTPException(
-        status_code=401,
-        detail="Invalid token"
-    )
+            status_code=401,
+            detail="Invalid token"
+        )
 
     user = db.query(User).filter(User.email == email).first()
 

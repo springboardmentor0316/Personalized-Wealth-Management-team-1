@@ -14,6 +14,14 @@ export default function Portfolio() {
   const [currentValue, setCurrentValue] = useState("");
   const [lastPrice, setLastPrice] = useState("");
 
+  const [transactions, setTransactions] = useState([]);
+  const [transactionType, setTransactionType] = useState("buy");
+  const [txSymbol, setTxSymbol] = useState("");
+  const [txUnits, setTxUnits] = useState("");
+  const [txPrice, setTxPrice] = useState("");
+  const [txInvestmentId, setTxInvestmentId] = useState("");
+  const [txNotes, setTxNotes] = useState("");
+
   const formatCurrency = (value) =>
     new Intl.NumberFormat("en-IN", {
       style: "currency",
@@ -23,6 +31,7 @@ export default function Portfolio() {
 
   useEffect(() => {
     fetchInvestments();
+    fetchTransactions();
   }, []);
 
   // Fetch Investments
@@ -87,8 +96,55 @@ export default function Portfolio() {
     try {
       await API.delete(`/investments/${id}`);
       fetchInvestments();
+      fetchTransactions();
     } catch (err) {
       console.error(err);
+    }
+  };
+
+  // Fetch transactions for dashboard
+  const fetchTransactions = async () => {
+    try {
+      const res = await API.get("/transactions/");
+      setTransactions(res.data);
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  // Create Transaction
+  const createTransaction = async () => {
+    if (!txSymbol || !txUnits || !txPrice || !transactionType) {
+      alert("Please fill transaction symbol, units, and price");
+      return;
+    }
+
+    try {
+      await API.post("/transactions/", {
+        transaction_type: transactionType,
+        symbol: txSymbol,
+        units: Number(txUnits),
+        price: Number(txPrice),
+        total_amount: Number(txUnits) * Number(txPrice),
+        investment_id: txInvestmentId ? Number(txInvestmentId) : null,
+        notes: txNotes,
+      });
+
+      setTxSymbol("");
+      setTxUnits("");
+      setTxPrice("");
+      setTxInvestmentId("");
+      setTxNotes("");
+
+      fetchInvestments();
+      fetchTransactions();
+    } catch (err) {
+      console.error(err);
+      const message =
+        err.response?.data?.detail ||
+        err.message ||
+        "Failed to save transaction";
+      alert(Array.isArray(message) ? JSON.stringify(message) : message);
     }
   };
 
@@ -225,6 +281,99 @@ export default function Portfolio() {
             Add Investment
           </button>
         </div>
+      </div>
+
+      {/* Transaction Tracker */}
+      <div className="bg-white p-6 rounded-xl shadow mb-8">
+        <h2 className="text-xl font-semibold mb-4">Add Transaction</h2>
+        <div className="grid grid-cols-6 gap-3">
+          <select
+            value={transactionType}
+            onChange={(e) => setTransactionType(e.target.value)}
+            className="border p-3 rounded col-span-1"
+          >
+            <option value="buy">Buy</option>
+            <option value="sell">Sell</option>
+            <option value="deposit">Deposit</option>
+            <option value="withdrawal">Withdrawal</option>
+          </select>
+          <input
+            placeholder="Symbol"
+            value={txSymbol}
+            onChange={(e) => setTxSymbol(e.target.value)}
+            className="border p-3 rounded col-span-1"
+          />
+          <input
+            placeholder="Units"
+            type="number"
+            value={txUnits}
+            onChange={(e) => setTxUnits(e.target.value)}
+            className="border p-3 rounded col-span-1"
+          />
+          <input
+            placeholder="Price"
+            type="number"
+            value={txPrice}
+            onChange={(e) => setTxPrice(e.target.value)}
+            className="border p-3 rounded col-span-1"
+          />
+          <input
+            placeholder="Investment ID (optional)"
+            type="number"
+            value={txInvestmentId}
+            onChange={(e) => setTxInvestmentId(e.target.value)}
+            className="border p-3 rounded col-span-1"
+          />
+          <button
+            onClick={createTransaction}
+            className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 col-span-1"
+          >
+            Save Transaction
+          </button>
+        </div>
+        <input
+          placeholder="Notes (optional)"
+          value={txNotes}
+          onChange={(e) => setTxNotes(e.target.value)}
+          className="border p-3 rounded w-full mt-3"
+        />
+      </div>
+
+      {/* Recent Transactions */}
+      <div className="bg-white p-6 rounded-xl shadow mb-8">
+        <h2 className="text-xl font-semibold mb-3">Recent Transactions</h2>
+        {transactions.length === 0 ? (
+          <p className="text-gray-500">No transactions yet.</p>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full table-auto text-left border-collapse">
+              <thead>
+                <tr className="bg-slate-100">
+                  <th className="px-3 py-2">Type</th>
+                  <th className="px-3 py-2">Symbol</th>
+                  <th className="px-3 py-2">Units</th>
+                  <th className="px-3 py-2">Price</th>
+                  <th className="px-3 py-2">Total</th>
+                  <th className="px-3 py-2">Inv ID</th>
+                  <th className="px-3 py-2">Date</th>
+                </tr>
+              </thead>
+              <tbody>
+                {transactions.map((tx) => (
+                  <tr key={tx.id} className="border-t">
+                    <td className="px-3 py-2">{tx.transaction_type}</td>
+                    <td className="px-3 py-2">{tx.symbol}</td>
+                    <td className="px-3 py-2">{tx.units}</td>
+                    <td className="px-3 py-2">{formatCurrency(tx.price)}</td>
+                    <td className="px-3 py-2">{formatCurrency(tx.total_amount)}</td>
+                    <td className="px-3 py-2">{tx.investment_id || "-"}</td>
+                    <td className="px-3 py-2">{new Date(tx.created_at).toLocaleDateString()}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
       </div>
 
       {/* Investments List */}

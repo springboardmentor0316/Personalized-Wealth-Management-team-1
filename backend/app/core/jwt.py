@@ -5,9 +5,8 @@ from dotenv import load_dotenv
 
 load_dotenv()
 SECRET_KEY = os.getenv("SECRET_KEY")
-
-if SECRET_KEY is None:
-    raise ValueError("SECRET_KEY not set in environment variables")
+if not SECRET_KEY:
+    SECRET_KEY = "change-me-please-in-prod"
 
 ALGORITHM = "HS256"
 
