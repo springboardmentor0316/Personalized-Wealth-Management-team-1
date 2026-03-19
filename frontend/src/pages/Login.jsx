@@ -1,32 +1,56 @@
 import { Link, useNavigate } from "react-router-dom";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import API from "../api/axios";
+import { FaEye, FaEyeSlash } from "react-icons/fa";
 
 export default function Login() {
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
   const navigate = useNavigate();
 
+  // ✅ Redirect if already logged in
+  useEffect(() => {
+    const token = localStorage.getItem("access_token");
+
+    if (token && token !== "undefined" && token !== "null") {
+      navigate("/dashboard");
+    }
+  }, [navigate]);
+
   const handleLogin = async (e) => {
     e.preventDefault();
+    setError("");
+    setLoading(true);
 
     try {
-
       const res = await API.post("/auth/login", {
         email,
         password
       });
 
+      // ✅ Store tokens
       localStorage.setItem("access_token", res.data.access_token);
       localStorage.setItem("refresh_token", res.data.refresh_token);
 
-      navigate("/dashboard");
+      alert("Login successful!");
+
+      // 🔥 Force reload to apply auth globally
+      window.location.href = "/dashboard";
 
     } catch (err) {
-      setError("Invalid email or password");
+      setError(
+        err.response?.data?.detail?.[0]?.msg ||
+        err.response?.data?.detail ||
+        err.response?.data?.message ||
+        "Invalid email or password"
+      );
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -81,8 +105,9 @@ export default function Login() {
               </label>
 
               <div className="relative mt-2">
+
                 <input
-                  type="password"
+                  type={showPassword ? "text" : "password"}
                   placeholder="Enter your password"
                   value={password}
                   onChange={(e)=>setPassword(e.target.value)}
@@ -90,8 +115,14 @@ export default function Login() {
                   className="w-full p-4 rounded-lg bg-gray-200 outline-none focus:ring-2 focus:ring-emerald-500"
                 />
 
-                 {/* Eye icon  */}
-               <span className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500"></span>
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500"
+                >
+                  {showPassword ? <FaEyeSlash /> : <FaEye />}
+                </button>
+
               </div>
             </div>
 
@@ -105,9 +136,10 @@ export default function Login() {
             {/* Button */}
             <button
               type="submit"
-              className="w-full bg-emerald-600 text-white py-4 rounded-lg font-semibold hover:bg-emerald-700 transition"
+              disabled={loading}
+              className="w-full bg-emerald-600 text-white py-4 rounded-lg font-semibold hover:bg-emerald-700 transition disabled:opacity-70"
             >
-              Sign in
+              {loading ? "Signing in..." : "Sign in"}
             </button>
 
             {/* Register link */}
@@ -136,7 +168,7 @@ export default function Login() {
           className="absolute inset-0 w-full h-full object-cover"
         />
 
-        <div className="absolute inset-0 bg-gradient-to-br from-emerald-600/90 to-green-800/90 flex items-center px-20 text-white">
+        <div className="absolute inset-0 bg-linear-to-br from-emerald-600/90 to-green-800/90 flex items-center px-20 text-white">
 
           <div>
             <h2 className="text-5xl font-bold mb-6">
@@ -155,4 +187,3 @@ export default function Login() {
     </div>
   );
 }
-

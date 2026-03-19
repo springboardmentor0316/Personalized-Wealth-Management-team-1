@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from app.database import get_db
 from app.models.goal import Goal
@@ -8,14 +8,14 @@ from app.models.user import User
 
 router = APIRouter(prefix="/goals", tags=["Goals"])
 
-# create goal
+
+# CREATE GOAL
 @router.post("/")
 def create_goal(
     goal: GoalCreate,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
-
     new_goal = Goal(
         user_id=current_user.id,
         goal_type=goal.goal_type,
@@ -30,24 +30,31 @@ def create_goal(
 
     return new_goal
 
-# get all goals
+
+# GET GOALS
 @router.get("/")
 def get_goals(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
+    return db.query(Goal).filter(Goal.user_id == current_user.id).all()
 
-    goals = db.query(Goal).filter(
-        Goal.user_id == current_user.id
-    ).all()
 
-    return goals
-
-# update goal
+# UPDATE GOAL (FIXED 🔥)
 @router.put("/{goal_id}")
-def update_goal(goal_id: int, goal: GoalCreate, db: Session = Depends(get_db)):
+def update_goal(
+    goal_id: int,
+    goal: GoalCreate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    existing_goal = db.query(Goal).filter(
+        Goal.id == goal_id,
+        Goal.user_id == current_user.id
+    ).first()
 
-    existing_goal = db.query(Goal).filter(Goal.id == goal_id).first()
+    if not existing_goal:
+        raise HTTPException(status_code=404, detail="Goal not found")
 
     existing_goal.goal_type = goal.goal_type
     existing_goal.target_amount = goal.target_amount
@@ -55,17 +62,18 @@ def update_goal(goal_id: int, goal: GoalCreate, db: Session = Depends(get_db)):
     existing_goal.monthly_contribution = goal.monthly_contribution
 
     db.commit()
+    db.refresh(existing_goal)
 
     return existing_goal
 
-# delete goal
+
+# DELETE GOAL
 @router.delete("/{goal_id}")
 def delete_goal(
     goal_id: int,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
-
     goal = db.query(Goal).filter(
         Goal.id == goal_id,
         Goal.user_id == current_user.id

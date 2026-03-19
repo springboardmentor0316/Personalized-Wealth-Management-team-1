@@ -5,15 +5,14 @@ export default function Sidebar() {
   const navigate = useNavigate();
 
   const handleLogout = () => {
-    localStorage.removeItem("access_token");
-    localStorage.removeItem("refresh_token");
+    localStorage.clear();
     navigate("/login");
   };
 
   const linkClass =
     "block px-3 py-2 rounded-lg hover:bg-emerald-600 transition";
 
-  const activeClass = "bg-emerald-600";
+  const activeClass = "bg-emerald-600 text-white";
 
   return (
     <aside className="w-64 bg-emerald-700 text-white p-6 flex flex-col justify-between">
@@ -23,46 +22,34 @@ export default function Sidebar() {
 
         <nav className="space-y-3">
 
-          <NavLink
-            to="/dashboard"
-            className={({ isActive }) =>
-              `${linkClass} ${isActive ? activeClass : ""}`
-            }
-          >
+          <NavLink to="/dashboard" className={({ isActive }) =>
+            `${linkClass} ${isActive ? activeClass : ""}`}>
             Dashboard
           </NavLink>
 
-          <NavLink
-            to="/goals"
-            className={({ isActive }) =>
-              `${linkClass} ${isActive ? activeClass : ""}`
-            }
-          >
+          <NavLink to="/goals" className={({ isActive }) =>
+            `${linkClass} ${isActive ? activeClass : ""}`}>
             Goals
           </NavLink>
 
-          <NavLink
-            to="/portfolio"
-            className={({ isActive }) =>
-              `${linkClass} ${isActive ? activeClass : ""}`
-            }
-          >
+          <NavLink to="/portfolio" className={({ isActive }) =>
+            `${linkClass} ${isActive ? activeClass : ""}`}>
             Portfolio
           </NavLink>
 
-          <NavLink
-            to="/profile"
-            className={({ isActive }) =>
-              `${linkClass} ${isActive ? activeClass : ""}`
-            }
-          >
+          <NavLink to="/transactions" className={({ isActive }) =>
+            `${linkClass} ${isActive ? activeClass : ""}`}>
+            Transactions
+          </NavLink>
+
+          <NavLink to="/profile" className={({ isActive }) =>
+            `${linkClass} ${isActive ? activeClass : ""}`}>
             Profile
           </NavLink>
 
         </nav>
       </div>
 
-      {/* Logout */}
       <button
         onClick={handleLogout}
         className="bg-white text-emerald-700 px-4 py-2 rounded-lg font-medium"

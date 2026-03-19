@@ -2,8 +2,9 @@ from sqlalchemy import Column, Integer, Enum, ForeignKey, Numeric, Date, TIMESTA
 from sqlalchemy.sql import func
 from app.database import Base
 import enum
-from pydantic import BaseModel
 from datetime import date
+from sqlalchemy.orm import relationship
+
 
 class GoalType(enum.Enum):
     retirement = "retirement"
@@ -40,18 +41,8 @@ class Goal(Base):
 
     created_at = Column(TIMESTAMP, server_default=func.now())
 
-class GoalCreate(BaseModel):
-    goal_type: str
-    target_amount: float
-    target_date: date
-    monthly_contribution: float
+    user = relationship("User", back_populates="goals")
 
-class GoalResponse(BaseModel):
-    id: int
-    goal_type: str
-    target_amount: float
-    target_date: date
-    monthly_contribution: float
 
     class Config:
         from_attributes = True

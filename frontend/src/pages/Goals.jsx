@@ -1,220 +1,342 @@
 import { useState, useEffect } from "react";
 import API from "../api/axios";
+import {
+  Plus,
+  Target,
+  Home,
+  Plane,
+  GraduationCap,
+  Car,
+  Heart,
+  Shield,
+  Trash2,
+} from "lucide-react";
 
 export default function Goals() {
 
   const [goals, setGoals] = useState([]);
-
-  const [goalType, setGoalType] = useState("");
-  const [targetAmount, setTargetAmount] = useState("");
-  const [targetDate, setTargetDate] = useState("");
-  const [monthlyContribution, setMonthlyContribution] = useState("");
-
   const [loading, setLoading] = useState(true);
+  const [isOpen, setIsOpen] = useState(false);
+  const [creating, setCreating] = useState(false);
+
+  const [form, setForm] = useState({
+    goal_type: "",
+    name: "",
+    target_amount: "",
+    target_date: "",
+    monthly_contribution: ""
+  });
 
   useEffect(() => {
     fetchGoals();
   }, []);
 
-  // Fetch Goals
   const fetchGoals = async () => {
-
     try {
-
-      const res = await API.get("/goals");
-
-      setGoals(res.data);
-
-      setLoading(false);
-
+      const res = await API.get("/goals/");
+      setGoals(res.data || []);
     } catch (err) {
-
       console.error(err);
-
+    } finally {
+      setLoading(false);
     }
-
   };
 
-  // Create Goal
   const createGoal = async () => {
-
-    if (!goalType || !targetAmount || !targetDate || !monthlyContribution) {
-      alert("Please fill all fields");
+    if (!form.goal_type || !form.target_amount || !form.target_date || !form.monthly_contribution) {
+      alert("Please fill all required fields");
       return;
     }
 
     try {
+      setCreating(true);
 
-      await API.post("/goals", {
-        goal_type: goalType,
-        target_amount: Number(targetAmount),
-        target_date: targetDate,
-        monthly_contribution: Number(monthlyContribution)
+      console.log("Goal Type:", form.goal_type);
+
+      await API.post("/goals/", {
+        goal_type: form.goal_type.toLowerCase(),
+        name: form.name || null,
+        target_amount: Number(form.target_amount),
+        target_date: form.target_date,
+        monthly_contribution: Number(form.monthly_contribution)
       });
 
-      setGoalType("");
-      setTargetAmount("");
-      setTargetDate("");
-      setMonthlyContribution("");
+      setForm({
+        goal_type: "",
+        name: "",
+        target_amount: "",
+        target_date: "",
+        monthly_contribution: ""
+      });
 
+      setIsOpen(false);
       fetchGoals();
 
     } catch (err) {
+      console.log(err.response?.data);
 
-      console.error(err);
-      alert("Failed to create goal");
+      alert(
+        err.response?.data?.detail?.[0]?.msg ||
+        err.response?.data?.detail ||
+        "Failed to create goal"
+      );
 
+    } finally {
+      setCreating(false);
     }
-
   };
 
-  // Delete Goal
   const deleteGoal = async (id) => {
+    if (!window.confirm("Delete this goal?")) return;
 
     try {
-
       await API.delete(`/goals/${id}`);
-
       fetchGoals();
-
-    } catch (err) {
-
-      console.error(err);
-
+    } catch {
+      alert("Delete failed");
     }
+  };
 
+  const goalIcons = {
+    retirement: Target,
+    home: Home,
+    travel: Plane,
+    education: GraduationCap,
+    car: Car,
+    wedding: Heart,
+    emergency: Shield,
+    custom: Target,
   };
 
   if (loading) {
-
     return (
-      <div className="p-6">
-        <p className="text-gray-500">Loading goals...</p>
+      <div className="flex justify-center py-10">
+        <div className="animate-spin h-6 w-6 border-4 border-emerald-500 border-t-transparent rounded-full"></div>
       </div>
     );
-
   }
 
   return (
-    <div className="p-6">
-      <h1 className="text-2xl font-bold mb-6">My Goals</h1>
+    <div className="p-6 space-y-6 bg-gray-50 min-h-screen">
 
-      {/* Create Goal Form */}
-
-      <div className="bg-white p-6 rounded-xl shadow mb-8">
-        <h2 className="text-xl font-semibold mb-4">Create New Goal</h2>
-
-        <div className="grid grid-cols-4 gap-4">
-          <select
-            value={goalType}
-            onChange={(e) => setGoalType(e.target.value)}
-            className="border p-3 rounded"
-          >
-            <option value="">Select Goal Type</option>
-            <option value="retirement">Retirement</option>
-            <option value="home">Home</option>
-            <option value="education">Education</option>
-            <option value="car">Car</option>
-            <option value="travel">Travel</option>
-            <option value="medical">Medical</option>
-            <option value="emergency">Emergency Fund</option>
-            <option value="wedding">Wedding</option>
-            <option value="custom">Custom</option>
-          </select>
-
-          <input
-            placeholder="Target Amount"
-            value={targetAmount}
-            onChange={(e) => setTargetAmount(e.target.value)}
-            className="border p-3 rounded"
-          />
-
-          <input
-            type="date"
-            value={targetDate}
-            onChange={(e) => setTargetDate(e.target.value)}
-            className="border p-3 rounded"
-          />
-
-          <input
-            placeholder="Monthly Contribution"
-            value={monthlyContribution}
-            onChange={(e) => setMonthlyContribution(e.target.value)}
-            className="border p-3 rounded"
-          />
+      {/* HEADER */}
+      <div className="flex justify-between items-center">
+        <div>
+          <h1 className="text-3xl font-bold">Financial Goals</h1>
+          <p className="text-gray-500">Plan and track your financial objectives</p>
         </div>
 
         <button
-          onClick={createGoal}
-          className="mt-4 bg-emerald-600 text-white px-5 py-2 rounded-lg hover:bg-emerald-700"
+          onClick={() => setIsOpen(true)}
+          className="bg-emerald-600 text-white px-4 py-2 rounded-xl flex items-center gap-2 hover:bg-emerald-700"
         >
-          Add Goal
+          <Plus size={16} /> New Goal
         </button>
       </div>
 
-      {/* Goals List */}
+      {/* MODAL */}
+      {isOpen && (
+        <div className="fixed inset-0 bg-black/30 flex justify-center items-center z-50">
+          <div className="bg-white p-6 rounded-2xl w-full max-w-md space-y-4">
 
-      <div className="space-y-4">
-        {goals.length === 0 && (
-          <p className="text-gray-500">No goals created yet.</p>
-        )}
+            <h2 className="text-xl font-semibold">Create Goal</h2>
 
-        {goals.map((goal) => {
-          const progress =
-            ((goal.monthly_contribution * 12) / goal.target_amount) * 100;
-
-          return (
-            <div
-              key={goal.id}
-              className="bg-white border p-6 rounded-xl shadow flex justify-between items-center"
+            <select
+              value={form.goal_type}
+              onChange={(e)=>setForm({...form, goal_type:e.target.value})}
+              className="w-full p-3 bg-gray-100 rounded-xl"
             >
-              <div>
-                <p>
-                  <strong>Goal Type:</strong> {goal.goal_type}
-                </p>
+              <option value="">Select Type</option>
+              <option value="retirement">Retirement</option>
+              <option value="home">Home</option>
+              <option value="travel">Travel</option>
+              <option value="education">Education</option>
+              <option value="car">Car</option>
+              <option value="wedding">Wedding</option>
+              <option value="emergency">Emergency</option>
+              <option value="custom">Custom</option>
+            </select>
 
-                <p>
-                  <strong>Target Amount:</strong> ₹{goal.target_amount}
-                </p>
+            <input
+              placeholder="Goal Name (optional)"
+              value={form.name}
+              onChange={(e)=>setForm({...form, name:e.target.value})}
+              className="w-full p-3 bg-gray-100 rounded-xl"
+            />
 
-                <p>
-                  <strong>Monthly Contribution:</strong> ₹
-                  {goal.monthly_contribution}
-                </p>
+            <input
+              type="number"
+              placeholder="Target Amount"
+              value={form.target_amount}
+              onChange={(e)=>setForm({...form, target_amount:e.target.value})}
+              className="w-full p-3 bg-gray-100 rounded-xl"
+            />
 
-                <p>
-                  <strong>Target Date:</strong> {goal.target_date}
-                </p>
+            <input
+              type="date"
+              value={form.target_date}
+              onChange={(e)=>setForm({...form, target_date:e.target.value})}
+              className="w-full p-3 bg-gray-100 rounded-xl"
+            />
 
-                {/* Progress Bar */}
+            <input
+              type="number"
+              placeholder="Monthly Contribution"
+              value={form.monthly_contribution}
+              onChange={(e)=>setForm({...form, monthly_contribution:e.target.value})}
+              className="w-full p-3 bg-gray-100 rounded-xl"
+            />
 
-                <div className="mt-4">
-                  <div className="w-full bg-gray-200 h-3 rounded">
-                    <div
-                      className="bg-emerald-600 h-3 rounded"
-                      style={{
-                        width: `${Math.min(progress, 100)}%`,
-                      }}
-                    ></div>
-                  </div>
-
-                  <p className="text-sm text-gray-500 mt-1">
-                    {Math.min(progress, 100).toFixed(0)}% progress
-                  </p>
-                </div>
-              </div>
-
+            <div className="flex justify-end gap-3">
+              <button onClick={()=>setIsOpen(false)}>Cancel</button>
               <button
-                onClick={() => deleteGoal(goal.id)}
-                className="bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-600"
+                onClick={createGoal}
+                disabled={creating}
+                className="bg-emerald-600 text-white px-4 py-2 rounded-xl disabled:opacity-70"
               >
-                Delete
+                {creating ? "Creating..." : "Create"}
               </button>
             </div>
-          );
-        })}
-      </div>
+
+          </div>
+        </div>
+      )}
+
+      {/* EMPTY */}
+      {goals.length === 0 && (
+        <div className="text-center py-12 text-gray-500">
+          <p className="text-lg">No goals yet</p>
+          <p className="text-sm">Start building your future 🚀</p>
+        </div>
+      )}
+
+      {/* GOALS */}
+      {goals.length > 0 && (
+        <div className="grid md:grid-cols-2 gap-6">
+
+          {goals.map(goal => {
+
+            const Icon = goalIcons[goal.goal_type?.toLowerCase()] || Target;
+
+            const target = Number(goal.target_amount || 0);
+            const monthly = Number(goal.monthly_contribution || 0);
+            const current = Number(goal.current_amount || 0);
+
+            const progress = target ? ((monthly * 12) / target) * 100 : 0;
+            const percent = Math.min(progress, 100).toFixed(0);
+
+            const monthsRemaining = Math.max(
+              0,
+              Math.round(
+                (new Date(goal.target_date) - new Date()) /
+                (1000 * 60 * 60 * 24 * 30)
+              )
+            );
+
+            const projected = current + monthly * monthsRemaining;
+
+            return (
+              <div key={goal.id} className="bg-white rounded-2xl p-6 shadow-sm space-y-4">
+
+                <div className="flex justify-between items-start">
+
+                  <div className="flex gap-3 items-center">
+                    <div className="w-12 h-12 bg-emerald-100 rounded-xl flex items-center justify-center">
+                      <Icon className="text-emerald-600" size={22}/>
+                    </div>
+
+                    <div>
+                      <h3 className="font-semibold text-lg capitalize">
+                        {goal.name || `${goal.goal_type} Fund`}
+                      </h3>
+                      <p className="text-sm text-gray-500 capitalize">
+                        {goal.goal_type}
+                      </p>
+                    </div>
+                  </div>
+
+                  <button onClick={()=>deleteGoal(goal.id)}>
+                    <Trash2 className="text-red-500" size={18}/>
+                  </button>
+
+                </div>
+
+                {/* PROGRESS */}
+                <div>
+                  <div className="flex justify-between text-sm mb-2">
+                    <span className="text-gray-500">Progress</span>
+                    <span className="text-emerald-600 font-semibold">
+                      {percent}%
+                    </span>
+                  </div>
+
+                  <div className="w-full bg-gray-200 h-2 rounded-full">
+                    <div
+                      className="h-2 rounded-full bg-emerald-600"
+                      style={{ width: `${percent}%` }}
+                    />
+                  </div>
+                </div>
+
+                {/* AMOUNTS */}
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <p className="text-xs text-gray-500">Current</p>
+                    <p className="text-lg font-bold">
+                      ₹{current.toLocaleString("en-IN")}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-gray-500">Target</p>
+                    <p className="text-lg font-bold">
+                      ₹{target.toLocaleString("en-IN")}
+                    </p>
+                  </div>
+                </div>
+
+                {/* DETAILS */}
+                <div className="border-t pt-3 space-y-2 text-sm">
+
+                  <div className="flex justify-between">
+                    <span className="text-gray-500">Monthly</span>
+                    <span className="font-medium">
+                      ₹{monthly.toLocaleString("en-IN")}
+                    </span>
+                  </div>
+
+                  <div className="flex justify-between">
+                    <span className="text-gray-500">Target Date</span>
+                    <span className="font-medium">
+                      {new Date(goal.target_date).toLocaleDateString("en-IN", {
+                        month: "short",
+                        year: "numeric"
+                      })}
+                    </span>
+                  </div>
+
+                  <div className="flex justify-between">
+                    <span className="text-gray-500">Remaining</span>
+                    <span className="font-medium">
+                      {monthsRemaining} months
+                    </span>
+                  </div>
+
+                  <div className="flex justify-between">
+                    <span className="text-gray-500">Projected</span>
+                    <span className="font-semibold text-green-600">
+                      ₹{projected.toLocaleString("en-IN")}
+                    </span>
+                  </div>
+
+                </div>
+
+              </div>
+            );
+          })}
+
+        </div>
+      )}
+
     </div>
   );
-
 }

@@ -15,21 +15,29 @@ export default function Register() {
   });
 
   const [showPassword, setShowPassword] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setError("");
+    setLoading(true);
 
     try {
-
       await API.post("/auth/register", form);
 
+      alert("Registration successful! Please login."); // ✅ added
       navigate("/login");
 
-    } catch (error) {
-
-      console.log(error);
-      alert("Registration failed");
-
+    } catch (err) {
+      setError(
+        err.response?.data?.detail?.[0]?.msg ||
+        err.response?.data?.detail ||
+        err.response?.data?.message ||
+        "Registration failed"
+      );
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -45,7 +53,7 @@ export default function Register() {
           className="absolute inset-0 w-full h-full object-cover"
         />
 
-        <div className="absolute inset-0 bg-gradient-to-br from-emerald-600/90 to-green-800/90 flex items-center px-20 text-white">
+        <div className="absolute inset-0 bg-linear-to-br from-emerald-600/90 to-green-800/90 flex items-center px-20 text-white">
 
           <div>
             <h2 className="text-5xl font-bold mb-6">
@@ -64,19 +72,16 @@ export default function Register() {
       {/* RIGHT FORM SECTION */}
       <div className="flex items-center justify-center bg-gray-50 px-12 py-16">
 
-        <div className="w-[420px]">
+        <div className="w-105">
 
           {/* Logo */}
           <div className="flex items-center gap-3 mb-12">
-
             <div className="bg-emerald-600 text-white w-10 h-10 flex items-center justify-center rounded-lg text-lg">
               ↗
             </div>
-
             <h1 className="text-xl font-semibold">
               WealthTrack
             </h1>
-
           </div>
 
           {/* Heading */}
@@ -98,7 +103,8 @@ export default function Register() {
 
               <input
                 type="text"
-                placeholder="John Doe"
+                value={form.name}
+                placeholder="Enter your full name"
                 required
                 className="w-full mt-2 p-4 rounded-lg bg-gray-200 outline-none focus:ring-2 focus:ring-emerald-500"
                 onChange={(e)=>
@@ -115,6 +121,7 @@ export default function Register() {
 
               <input
                 type="email"
+                value={form.email}
                 placeholder="you@example.com"
                 required
                 className="w-full mt-2 p-4 rounded-lg bg-gray-200 outline-none focus:ring-2 focus:ring-emerald-500"
@@ -134,6 +141,7 @@ export default function Register() {
 
                 <input
                   type={showPassword ? "text" : "password"}
+                  value={form.password}
                   placeholder="Create a password"
                   required
                   className="w-full p-4 rounded-lg bg-gray-200 outline-none focus:ring-2 focus:ring-emerald-500"
@@ -160,32 +168,30 @@ export default function Register() {
               </label>
 
               <select
+                value={form.risk_profile}
                 className="w-full mt-2 p-4 rounded-lg bg-gray-200 outline-none focus:ring-2 focus:ring-emerald-500"
                 onChange={(e)=>
                   setForm({ ...form, risk_profile: e.target.value })
                 }
               >
-                <option value="conservative">
-                  Conservative
-                </option>
-
-                <option value="moderate">
-                  Moderate
-                </option>
-
-                <option value="aggressive">
-                  Aggressive
-                </option>
-
+                <option value="conservative">Conservative</option>
+                <option value="moderate">Moderate</option>
+                <option value="aggressive">Aggressive</option>
               </select>
             </div>
+
+            {/* ERROR */}
+            {error && (
+              <p className="text-red-500 text-sm">{error}</p>
+            )}
 
             {/* Button */}
             <button
               type="submit"
-              className="w-full bg-emerald-600 text-white py-4 rounded-lg font-semibold hover:bg-emerald-700 transition"
+              disabled={loading}
+              className="w-full bg-emerald-600 text-white py-4 rounded-lg font-semibold hover:bg-emerald-700 transition disabled:opacity-70"
             >
-              Create account
+              {loading ? "Creating..." : "Create account"}
             </button>
 
             {/* Login Link */}

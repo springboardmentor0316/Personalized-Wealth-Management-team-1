@@ -1,11 +1,14 @@
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import ProtectedRoute from "../components/ProtectedRoute";
 import Layout from "../components/Layout";
+
 import Login from "../pages/Login";
 import Register from "../pages/Register";
 import Dashboard from "../pages/Dashboard";
 import Profile from "../pages/Profile";
 import Goals from "../pages/Goals";
+import Portfolio from "../pages/Portfolio";
+import Transactions from "../pages/Transactions";
 
 export default function AppRoutes() {
 
@@ -13,13 +16,14 @@ export default function AppRoutes() {
 
   return (
     <BrowserRouter>
+
       <Routes>
 
-        {/* Public Routes */}
+        {/* PUBLIC ROUTES */}
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
 
-        {/* Protected Routes */}
+        {/* PROTECTED ROUTES */}
         <Route element={<Layout />}>
 
           <Route
@@ -49,9 +53,27 @@ export default function AppRoutes() {
             }
           />
 
+          <Route
+            path="/portfolio"
+            element={
+              <ProtectedRoute>
+                <Portfolio />
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/transactions"
+            element={
+              <ProtectedRoute>
+                <Transactions />
+              </ProtectedRoute>
+            }
+          />
+
         </Route>
 
-        {/* Default Redirect */}
+        {/* DEFAULT ROUTE */}
         <Route
           path="/"
           element={
@@ -61,7 +83,14 @@ export default function AppRoutes() {
           }
         />
 
+        {/* FALLBACK  */}
+        <Route
+          path="*"
+          element={<Navigate to="/" />}
+        />
+
       </Routes>
+
     </BrowserRouter>
   );
 }
