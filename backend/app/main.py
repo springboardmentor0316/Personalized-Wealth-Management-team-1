@@ -8,7 +8,8 @@ from app.models import goal
 from fastapi.staticfiles import StaticFiles
 from app.routes import investments
 from app.routes import transactions
-
+from app.routes import simulations
+from app.models.simulation import Simulation
 
 app = FastAPI()
 
@@ -37,4 +38,5 @@ app.include_router(profile.router)
 app.include_router(goals.router)
 app.include_router(investments.router)
 app.include_router(transactions.router)
+app.include_router(simulations.router)
 app.mount("/uploads", StaticFiles(directory="uploads"), name="uploads")

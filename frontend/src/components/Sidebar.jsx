@@ -1,62 +1,110 @@
 import { NavLink, useNavigate } from "react-router-dom";
+import {
+LayoutDashboard,
+Target,
+Briefcase,
+ArrowLeftRight,
+User,
+BarChart3,
+LogOut,
+} from "lucide-react";
 
 export default function Sidebar() {
+const navigate = useNavigate();
 
-  const navigate = useNavigate();
+const handleLogout = () => {
+localStorage.removeItem("access_token");
+navigate("/login");
+};
 
-  const handleLogout = () => {
-    localStorage.clear();
-    navigate("/login");
-  };
+const linkClass =
+"flex items-center gap-3 px-3 py-2 rounded-lg transition hover:bg-emerald-600";
 
-  const linkClass =
-    "block px-3 py-2 rounded-lg hover:bg-emerald-600 transition";
+const activeClass = "bg-emerald-600 text-white";
 
-  const activeClass = "bg-emerald-600 text-white";
+return ( <aside className="h-full bg-emerald-700 text-white p-6 flex flex-col justify-between">
 
-  return (
-    <aside className="w-64 bg-emerald-700 text-white p-6 flex flex-col justify-between">
 
-      <div>
-        <h1 className="text-2xl font-bold mb-10">WealthTrack</h1>
+  {/* TOP SECTION */}
+  <div>
+    <h1 className="text-2xl font-bold mb-10">WealthTrack</h1>
 
-        <nav className="space-y-3">
+    <nav className="space-y-3">
 
-          <NavLink to="/dashboard" className={({ isActive }) =>
-            `${linkClass} ${isActive ? activeClass : ""}`}>
-            Dashboard
-          </NavLink>
-
-          <NavLink to="/goals" className={({ isActive }) =>
-            `${linkClass} ${isActive ? activeClass : ""}`}>
-            Goals
-          </NavLink>
-
-          <NavLink to="/portfolio" className={({ isActive }) =>
-            `${linkClass} ${isActive ? activeClass : ""}`}>
-            Portfolio
-          </NavLink>
-
-          <NavLink to="/transactions" className={({ isActive }) =>
-            `${linkClass} ${isActive ? activeClass : ""}`}>
-            Transactions
-          </NavLink>
-
-          <NavLink to="/profile" className={({ isActive }) =>
-            `${linkClass} ${isActive ? activeClass : ""}`}>
-            Profile
-          </NavLink>
-
-        </nav>
-      </div>
-
-      <button
-        onClick={handleLogout}
-        className="bg-white text-emerald-700 px-4 py-2 rounded-lg font-medium"
+      <NavLink
+        to="/dashboard"
+        className={({ isActive }) =>
+          `${linkClass} ${isActive ? activeClass : ""}`
+        }
       >
-        Logout
-      </button>
+        <LayoutDashboard size={18} />
+        Dashboard
+      </NavLink>
 
-    </aside>
-  );
+      <NavLink
+        to="/goals"
+        className={({ isActive }) =>
+          `${linkClass} ${isActive ? activeClass : ""}`
+        }
+      >
+        <Target size={18} />
+        Goals
+      </NavLink>
+
+      <NavLink
+        to="/portfolio"
+        className={({ isActive }) =>
+          `${linkClass} ${isActive ? activeClass : ""}`
+        }
+      >
+        <Briefcase size={18} />
+        Portfolio
+      </NavLink>
+
+      <NavLink
+        to="/transactions"
+        className={({ isActive }) =>
+          `${linkClass} ${isActive ? activeClass : ""}`
+        }
+      >
+        <ArrowLeftRight size={18} />
+        Transactions
+      </NavLink>
+
+      <NavLink
+        to="/simulation"
+        className={({ isActive }) =>
+          `${linkClass} ${isActive ? activeClass : ""}`
+        }
+      >
+        <BarChart3 size={18} />
+        Simulation
+      </NavLink>
+
+      <NavLink
+        to="/profile"
+        className={({ isActive }) =>
+          `${linkClass} ${isActive ? activeClass : ""}`
+        }
+      >
+        <User size={18} />
+        Profile
+      </NavLink>
+
+    </nav>
+  </div>
+
+  {/* LOGOUT BUTTON */}
+  <button
+    onClick={handleLogout}
+    className="flex items-center justify-center gap-2 bg-white text-emerald-700 px-4 py-2 rounded-lg font-medium hover:bg-gray-100 transition"
+  >
+    <LogOut size={16} />
+    Logout
+  </button>
+
+</aside>
+
+
+);
 }

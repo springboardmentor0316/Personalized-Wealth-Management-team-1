@@ -1,23 +1,18 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from datetime import datetime
-
 from app.database import get_db
 from app.models.investment import Investment
-from app.schemas.investment import (
-    InvestmentCreate,
-    InvestmentUpdate,
-    InvestmentResponse
-)
+from app.schemas.investment import (InvestmentCreate,InvestmentUpdate,InvestmentResponse)
 from app.routes.profile import get_current_user
 from app.models.user import User
+from app.services.price_updater import update_all_prices
 
 router = APIRouter(prefix="/investments", tags=["Investments"])
 
 
-# =========================
 # CREATE INVESTMENT
-# =========================
+
 @router.post("/", response_model=InvestmentResponse)
 def create_investment(
     investment: InvestmentCreate,
@@ -172,3 +167,9 @@ def delete_investment(
     db.commit()
 
     return {"message": "Investment deleted"}
+
+
+@router.post("/refresh-prices")
+def refresh_prices(db: Session = Depends(get_db)):
+    update_all_prices(db)
+    return {"message": "Prices updated successfully"}

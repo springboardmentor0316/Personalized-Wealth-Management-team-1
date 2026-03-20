@@ -5,92 +5,44 @@ import Layout from "../components/Layout";
 import Login from "../pages/Login";
 import Register from "../pages/Register";
 import Dashboard from "../pages/Dashboard";
-import Profile from "../pages/Profile";
-import Goals from "../pages/Goals";
 import Portfolio from "../pages/Portfolio";
+import Goals from "../pages/Goals";
+import Simulation from "../pages/Simulation";
 import Transactions from "../pages/Transactions";
+import Profile from "../pages/Profile";
 
 export default function AppRoutes() {
+return ( <BrowserRouter> <Routes>
 
-  const token = localStorage.getItem("access_token");
+    {/* PUBLIC */}
+    <Route path="/login" element={<Login />} />
+    <Route path="/register" element={<Register />} />
 
-  return (
-    <BrowserRouter>
+    {/* PROTECTED */}
+    <Route
+      path="/"
+      element={
+        <ProtectedRoute>
+          <Layout />
+        </ProtectedRoute>
+      }
+    >
+      <Route index element={<Navigate to="/dashboard" />} />
 
-      <Routes>
+      <Route path="dashboard" element={<Dashboard />} />
+      <Route path="portfolio" element={<Portfolio />} />
+      <Route path="goals" element={<Goals />} />
+      <Route path="simulation" element={<Simulation />} />
+      <Route path="transactions" element={<Transactions />} />
+      <Route path="profile" element={<Profile />} />
+    </Route>
 
-        {/* PUBLIC ROUTES */}
-        <Route path="/login" element={<Login />} />
-        <Route path="/register" element={<Register />} />
+    {/* FALLBACK */}
+    <Route path="*" element={<Navigate to="/login" />} />
 
-        {/* PROTECTED ROUTES */}
-        <Route element={<Layout />}>
+  </Routes>
+</BrowserRouter>
 
-          <Route
-            path="/dashboard"
-            element={
-              <ProtectedRoute>
-                <Dashboard />
-              </ProtectedRoute>
-            }
-          />
 
-          <Route
-            path="/profile"
-            element={
-              <ProtectedRoute>
-                <Profile />
-              </ProtectedRoute>
-            }
-          />
-
-          <Route
-            path="/goals"
-            element={
-              <ProtectedRoute>
-                <Goals />
-              </ProtectedRoute>
-            }
-          />
-
-          <Route
-            path="/portfolio"
-            element={
-              <ProtectedRoute>
-                <Portfolio />
-              </ProtectedRoute>
-            }
-          />
-
-          <Route
-            path="/transactions"
-            element={
-              <ProtectedRoute>
-                <Transactions />
-              </ProtectedRoute>
-            }
-          />
-
-        </Route>
-
-        {/* DEFAULT ROUTE */}
-        <Route
-          path="/"
-          element={
-            token
-              ? <Navigate to="/dashboard" />
-              : <Navigate to="/login" />
-          }
-        />
-
-        {/* FALLBACK  */}
-        <Route
-          path="*"
-          element={<Navigate to="/" />}
-        />
-
-      </Routes>
-
-    </BrowserRouter>
-  );
+);
 }

@@ -1,14 +1,9 @@
 import { useEffect, useState } from "react";
 import API from "../api/axios";
-import {
-  Plus,
-  TrendingUp,
-  TrendingDown,
-  Trash2
-} from "lucide-react";
+import toast from "react-hot-toast";
+import { Plus, TrendingUp, TrendingDown, Trash2 } from "lucide-react";
 
 export default function Portfolio() {
-
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [isOpen, setIsOpen] = useState(false);
@@ -18,7 +13,7 @@ export default function Portfolio() {
     symbol: "",
     asset_type: "",
     units: "",
-    avg_buy_price: ""
+    avg_buy_price: "",
   });
 
   useEffect(() => {
@@ -31,15 +26,20 @@ export default function Portfolio() {
       setData(res.data || []);
     } catch (err) {
       console.error(err);
-      alert("Failed to load investments");
+      toast.error("Failed to load investments");
     } finally {
       setLoading(false);
     }
   };
 
   const createInvestment = async () => {
-    if (!form.symbol || !form.units || !form.avg_buy_price || !form.asset_type) {
-      alert("Fill all fields");
+    if (
+      !form.symbol ||
+      !form.units ||
+      !form.avg_buy_price ||
+      !form.asset_type
+    ) {
+      toast.error("Fill all fields");
       return;
     }
 
@@ -47,9 +47,11 @@ export default function Portfolio() {
     const price = Number(form.avg_buy_price);
 
     if (isNaN(units) || isNaN(price)) {
-      alert("Invalid numbers");
+      toast.error("Invalid numbers");
       return;
     }
+
+    const toastId = toast.loading("Adding investment...");
 
     try {
       setCreating(true);
@@ -62,45 +64,47 @@ export default function Portfolio() {
         units,
         avg_buy_price: price,
         cost_basis,
-        current_value: cost_basis
+        current_value: cost_basis,
       });
-
-      alert("Investment added successfully ✅");
 
       setForm({
         symbol: "",
         asset_type: "",
         units: "",
-        avg_buy_price: ""
+        avg_buy_price: "",
       });
 
       setIsOpen(false);
       fetchInvestments();
 
+      toast.success("Investment added successfully", { id: toastId });
     } catch (err) {
       console.error(err);
-      alert(
-        err.response?.data?.detail ||
-        "Failed to add investment"
-      );
+      toast.error(err.response?.data?.detail || "Failed to add investment", {
+        id: toastId,
+      });
     } finally {
       setCreating(false);
     }
   };
 
   const deleteInvestment = async (id) => {
-    if (!window.confirm("Delete this investment?")) return;
+    const toastId = toast.loading("Deleting investment...");
 
     try {
       await API.delete(`/investments/${id}`);
       fetchInvestments();
+
+      toast.success("Investment deleted", { id: toastId });
     } catch {
-      alert("Delete failed");
+      toast.error("Delete failed", { id: toastId });
     }
   };
 
-  // CALCULATIONS
-  const totalValue = data.reduce((sum, i) => sum + Number(i.current_value || 0), 0);
+  const totalValue = data.reduce(
+    (sum, i) => sum + Number(i.current_value || 0),
+    0,
+  );
   const totalCost = data.reduce((sum, i) => sum + Number(i.cost_basis || 0), 0);
   const totalProfit = totalValue - totalCost;
   const percent = totalCost ? ((totalProfit / totalCost) * 100).toFixed(2) : 0;
@@ -108,15 +112,14 @@ export default function Portfolio() {
   if (loading) {
     return (
       <div className="flex justify-center py-10">
-        <div className="animate-spin h-6 w-6 border-4 border-emerald-500 border-t-transparent rounded-full"></div>
+        {" "}
+        <div className="animate-spin h-6 w-6 border-4 border-emerald-500 border-t-transparent rounded-full"></div>{" "}
       </div>
     );
   }
 
   return (
     <div className="p-6 space-y-6 bg-gray-50 min-h-screen">
-
-      {/* HEADER */}
       <div className="flex justify-between items-center">
         <div>
           <h1 className="text-3xl font-bold">Portfolio</h1>
@@ -129,20 +132,18 @@ export default function Portfolio() {
           onClick={() => setIsOpen(true)}
           className="bg-emerald-600 text-white px-5 py-2 rounded-xl flex items-center gap-2 hover:bg-emerald-700"
         >
-          <Plus size={16}/> Add Investment
+          <Plus size={16} /> Add Investment
         </button>
       </div>
 
-      {/* MODAL */}
       {isOpen && (
         <div className="fixed inset-0 bg-black/30 flex justify-center items-center z-50">
           <div className="bg-white p-6 rounded-2xl w-full max-w-md space-y-4">
-
             <h2 className="text-xl font-semibold">Add Investment</h2>
 
             <select
               value={form.asset_type}
-              onChange={(e)=>setForm({...form, asset_type:e.target.value})}
+              onChange={(e) => setForm({ ...form, asset_type: e.target.value })}
               className="w-full p-3 bg-gray-100 rounded-xl"
             >
               <option value="">Asset Type</option>
@@ -156,7 +157,7 @@ export default function Portfolio() {
             <input
               placeholder="Symbol"
               value={form.symbol}
-              onChange={(e)=>setForm({...form, symbol:e.target.value})}
+              onChange={(e) => setForm({ ...form, symbol: e.target.value })}
               className="w-full p-3 bg-gray-100 rounded-xl"
             />
 
@@ -164,7 +165,7 @@ export default function Portfolio() {
               type="number"
               placeholder="Units"
               value={form.units}
-              onChange={(e)=>setForm({...form, units:e.target.value})}
+              onChange={(e) => setForm({ ...form, units: e.target.value })}
               className="w-full p-3 bg-gray-100 rounded-xl"
             />
 
@@ -172,12 +173,14 @@ export default function Portfolio() {
               type="number"
               placeholder="Avg Buy Price"
               value={form.avg_buy_price}
-              onChange={(e)=>setForm({...form, avg_buy_price:e.target.value})}
+              onChange={(e) =>
+                setForm({ ...form, avg_buy_price: e.target.value })
+              }
               className="w-full p-3 bg-gray-100 rounded-xl"
             />
 
             <div className="flex justify-end gap-3">
-              <button onClick={()=>setIsOpen(false)}>Cancel</button>
+              <button onClick={() => setIsOpen(false)}>Cancel</button>
               <button
                 onClick={createInvestment}
                 disabled={creating}
@@ -186,21 +189,17 @@ export default function Portfolio() {
                 {creating ? "Adding..." : "Add"}
               </button>
             </div>
-
           </div>
         </div>
       )}
 
-      {/* EMPTY */}
       {data.length === 0 ? (
         <div className="text-center py-10 text-gray-500">
           No investments yet 🚀
         </div>
       ) : (
         <>
-          {/* SUMMARY */}
           <div className="grid md:grid-cols-3 gap-6">
-
             <div className="bg-white p-6 rounded-2xl shadow-sm">
               <p className="text-sm text-gray-500">Total Portfolio Value</p>
               <h2 className="text-3xl font-bold mt-2">
@@ -218,25 +217,28 @@ export default function Portfolio() {
             <div className="bg-white p-6 rounded-2xl shadow-sm">
               <p className="text-sm text-gray-500">Total Gain/Loss</p>
               <div className="flex items-center gap-2 mt-2">
-                <h2 className={`text-3xl font-bold ${totalProfit >= 0 ? "text-green-600" : "text-red-600"}`}>
+                <h2
+                  className={`text-3xl font-bold ${totalProfit >= 0 ? "text-green-600" : "text-red-600"}`}
+                >
                   ₹{Math.abs(totalProfit).toLocaleString("en-IN")}
                 </h2>
-                <span className={totalProfit >= 0 ? "text-green-600" : "text-red-600"}>
-                  ({totalProfit >= 0 ? "+" : ""}{percent}%)
+                <span
+                  className={
+                    totalProfit >= 0 ? "text-green-600" : "text-red-600"
+                  }
+                >
+                  ({totalProfit >= 0 ? "+" : ""}
+                  {percent}%)
                 </span>
               </div>
             </div>
-
           </div>
 
-          {/* TABLE */}
           <div className="bg-white rounded-2xl shadow-sm overflow-hidden">
-
             <h2 className="p-6 font-semibold text-lg">Holdings</h2>
 
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
-
                 <thead className="bg-gray-50 text-gray-500">
                   <tr>
                     <th className="text-left p-4">Symbol</th>
@@ -251,17 +253,16 @@ export default function Portfolio() {
                 </thead>
 
                 <tbody>
-                  {data.map(item => {
-
+                  {data.map((item) => {
                     const cost = Number(item.cost_basis || 0);
                     const value = Number(item.current_value || 0);
                     const profit = value - cost;
-                    const percent =
-                      cost ? ((profit / cost) * 100).toFixed(2) : 0;
+                    const percent = cost
+                      ? ((profit / cost) * 100).toFixed(2)
+                      : 0;
 
                     return (
                       <tr key={item.id} className="hover:bg-gray-50">
-
                         <td className="p-4 font-semibold">{item.symbol}</td>
 
                         <td className="p-4 text-gray-500 capitalize">
@@ -285,37 +286,44 @@ export default function Portfolio() {
                         <td className="p-4 text-right">
                           <div className="flex justify-end items-center gap-1">
                             {profit >= 0 ? (
-                              <TrendingUp className="text-green-600" size={16}/>
+                              <TrendingUp
+                                className="text-green-600"
+                                size={16}
+                              />
                             ) : (
-                              <TrendingDown className="text-red-600" size={16}/>
+                              <TrendingDown
+                                className="text-red-600"
+                                size={16}
+                              />
                             )}
-                            <span className={profit >= 0 ? "text-green-600" : "text-red-600"}>
+                            <span
+                              className={
+                                profit >= 0 ? "text-green-600" : "text-red-600"
+                              }
+                            >
                               ₹{Math.abs(profit).toLocaleString("en-IN")}
                             </span>
                             <span className="text-xs text-gray-500">
-                              ({profit >= 0 ? "+" : ""}{percent}%)
+                              ({profit >= 0 ? "+" : ""}
+                              {percent}%)
                             </span>
                           </div>
                         </td>
 
                         <td className="p-4 text-right">
-                          <button onClick={()=>deleteInvestment(item.id)}>
-                            <Trash2 className="text-red-500" size={18}/>
+                          <button onClick={() => deleteInvestment(item.id)}>
+                            <Trash2 className="text-red-500" size={18} />
                           </button>
                         </td>
-
                       </tr>
                     );
                   })}
                 </tbody>
-
               </table>
             </div>
-
           </div>
         </>
       )}
-
     </div>
   );
 }

@@ -3,15 +3,17 @@ import { Outlet } from "react-router-dom";
 
 export default function Layout() {
   return (
-    <div className="flex min-h-screen">
+    <div className="flex">
 
-      {/* Sidebar */}
-      <Sidebar />
+      {/*  SIDEBAR */}
+      <div className="fixed top-0 left-0 h-screen w-64 z-50">
+        <Sidebar />
+      </div>
 
-      {/* Page Content */}
-      <main className="flex-1 bg-gray-50 overflow-y-auto">
+      {/* MAIN CONTENT AREA */}
+      <div className="ml-64 flex-1 h-screen overflow-y-auto bg-gray-50 p-6">
         <Outlet />
-      </main>
+      </div>
 
     </div>
   );

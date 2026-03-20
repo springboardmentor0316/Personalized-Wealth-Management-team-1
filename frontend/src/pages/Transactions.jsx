@@ -1,15 +1,15 @@
 import { useEffect, useState } from "react";
 import API from "../api/axios";
+import toast from "react-hot-toast";
 import {
   Plus,
   ArrowUpCircle,
   ArrowDownCircle,
   DollarSign,
-  Trash2
+  Trash2,
 } from "lucide-react";
 
 export default function Transactions() {
-
   const [transactions, setTransactions] = useState([]);
   const [loading, setLoading] = useState(true);
   const [isOpen, setIsOpen] = useState(false);
@@ -20,7 +20,7 @@ export default function Transactions() {
     type: "buy",
     quantity: "",
     price: "",
-    fees: ""
+    fees: "",
   });
 
   useEffect(() => {
@@ -33,6 +33,7 @@ export default function Transactions() {
       setTransactions(res.data || []);
     } catch (err) {
       console.error("Transactions fetch error:", err);
+      toast.error("Failed to load transactions");
     } finally {
       setLoading(false);
     }
@@ -40,9 +41,11 @@ export default function Transactions() {
 
   const createTransaction = async () => {
     if (!form.symbol || !form.quantity || !form.price) {
-      alert("Fill all required fields");
+      toast.error("Fill all required fields");
       return;
     }
+
+    const toastId = toast.loading("Adding transaction...");
 
     try {
       setCreating(true);
@@ -56,7 +59,7 @@ export default function Transactions() {
         type: form.type,
         quantity,
         price,
-        fees
+        fees,
       });
 
       console.log("Created:", res.data);
@@ -66,37 +69,41 @@ export default function Transactions() {
         type: "buy",
         quantity: "",
         price: "",
-        fees: ""
+        fees: "",
       });
 
       setIsOpen(false);
       await fetchTransactions();
 
+      toast.success("Transaction added", { id: toastId });
     } catch (err) {
       console.error(err);
-      alert(
-        err.response?.data?.detail ||
-        "Error creating transaction"
-      );
+      toast.error(err.response?.data?.detail || "Error creating transaction", {
+        id: toastId,
+      });
     } finally {
       setCreating(false);
     }
   };
 
   const deleteTransaction = async (id) => {
-    if (!window.confirm("Delete this transaction?")) return;
+    const toastId = toast.loading("Deleting transaction...");
 
     try {
       await API.delete(`/transactions/${id}`);
-      fetchTransactions();
+      await fetchTransactions();
+
+      toast.success("Transaction deleted", { id: toastId });
     } catch {
-      alert("Delete failed");
+      toast.error("Delete failed", { id: toastId });
     }
   };
 
   const getIcon = (type) => {
-    if (type === "buy") return <ArrowUpCircle className="text-green-600" size={20} />;
-    if (type === "sell") return <ArrowDownCircle className="text-red-600" size={20} />;
+    if (type === "buy")
+      return <ArrowUpCircle className="text-green-600" size={20} />;
+    if (type === "sell")
+      return <ArrowDownCircle className="text-red-600" size={20} />;
     return <DollarSign className="text-emerald-600" size={20} />;
   };
 
@@ -119,14 +126,14 @@ export default function Transactions() {
   if (loading) {
     return (
       <div className="flex justify-center py-20">
-        <div className="animate-spin h-8 w-8 border-4 border-emerald-500 border-t-transparent rounded-full"></div>
+        {" "}
+        <div className="animate-spin h-8 w-8 border-4 border-emerald-500 border-t-transparent rounded-full"></div>{" "}
       </div>
     );
   }
 
   return (
     <div className="p-6 space-y-6 bg-gray-50 min-h-screen">
-
       {/* HEADER */}
       <div className="flex justify-between items-center">
         <div>
@@ -140,7 +147,7 @@ export default function Transactions() {
           onClick={() => setIsOpen(true)}
           className="bg-emerald-600 text-white px-5 py-2 rounded-xl flex items-center gap-2 hover:bg-emerald-700"
         >
-          <Plus size={16}/> New Transaction
+          <Plus size={16} /> New Transaction
         </button>
       </div>
 
@@ -148,12 +155,11 @@ export default function Transactions() {
       {isOpen && (
         <div className="fixed inset-0 bg-black/30 flex justify-center items-center z-50">
           <div className="bg-white p-6 rounded-2xl w-full max-w-md space-y-4">
-
             <h2 className="text-xl font-semibold">Add Transaction</h2>
 
             <select
               value={form.type}
-              onChange={(e)=>setForm({...form, type:e.target.value})}
+              onChange={(e) => setForm({ ...form, type: e.target.value })}
               className="w-full p-3 bg-gray-100 rounded-xl"
             >
               <option value="buy">Buy</option>
@@ -164,7 +170,7 @@ export default function Transactions() {
             <input
               placeholder="Symbol"
               value={form.symbol}
-              onChange={(e)=>setForm({...form, symbol:e.target.value})}
+              onChange={(e) => setForm({ ...form, symbol: e.target.value })}
               className="w-full p-3 bg-gray-100 rounded-xl"
             />
 
@@ -172,7 +178,7 @@ export default function Transactions() {
               type="number"
               placeholder="Quantity"
               value={form.quantity}
-              onChange={(e)=>setForm({...form, quantity:e.target.value})}
+              onChange={(e) => setForm({ ...form, quantity: e.target.value })}
               className="w-full p-3 bg-gray-100 rounded-xl"
             />
 
@@ -180,7 +186,7 @@ export default function Transactions() {
               type="number"
               placeholder="Price"
               value={form.price}
-              onChange={(e)=>setForm({...form, price:e.target.value})}
+              onChange={(e) => setForm({ ...form, price: e.target.value })}
               className="w-full p-3 bg-gray-100 rounded-xl"
             />
 
@@ -188,12 +194,12 @@ export default function Transactions() {
               type="number"
               placeholder="Fees"
               value={form.fees}
-              onChange={(e)=>setForm({...form, fees:e.target.value})}
+              onChange={(e) => setForm({ ...form, fees: e.target.value })}
               className="w-full p-3 bg-gray-100 rounded-xl"
             />
 
             <div className="flex justify-end gap-3">
-              <button onClick={()=>setIsOpen(false)}>Cancel</button>
+              <button onClick={() => setIsOpen(false)}>Cancel</button>
               <button
                 onClick={createTransaction}
                 disabled={creating}
@@ -202,14 +208,12 @@ export default function Transactions() {
                 {creating ? "Adding..." : "Add"}
               </button>
             </div>
-
           </div>
         </div>
       )}
 
       {/* LIST */}
       <div className="bg-white rounded-2xl shadow-sm p-6 space-y-4">
-
         <h2 className="font-semibold text-lg">Transaction History</h2>
 
         {transactions.length === 0 ? (
@@ -218,7 +222,6 @@ export default function Transactions() {
           </div>
         ) : (
           transactions.map((t) => {
-
             const amount = getAmount(t);
 
             return (
@@ -226,10 +229,7 @@ export default function Transactions() {
                 key={t.id}
                 className="flex justify-between items-center bg-gray-50 p-4 rounded-xl hover:bg-gray-100 transition"
               >
-
-                {/* LEFT */}
                 <div className="flex items-center gap-4">
-
                   <div className="w-10 h-10 bg-white rounded-full flex items-center justify-center">
                     {getIcon(t.type)}
                   </div>
@@ -237,14 +237,18 @@ export default function Transactions() {
                   <div>
                     <div className="flex items-center gap-2">
                       <h4 className="font-semibold">{t.symbol}</h4>
-                      <span className={`px-2 py-0.5 text-xs rounded-full capitalize ${getBadge(t.type)}`}>
+                      <span
+                        className={`px-2 py-0.5 text-xs rounded-full capitalize ${getBadge(t.type)}`}
+                      >
                         {t.type}
                       </span>
                     </div>
 
                     <p className="text-sm text-gray-500">
-                      {t.quantity} units @ ₹{Number(t.price).toLocaleString("en-IN")}
-                      {Number(t.fees) > 0 && ` • Fees: ₹${Number(t.fees).toLocaleString("en-IN")}`}
+                      {t.quantity} units @ ₹
+                      {Number(t.price).toLocaleString("en-IN")}
+                      {Number(t.fees) > 0 &&
+                        ` • Fees: ₹${Number(t.fees).toLocaleString("en-IN")}`}
                     </p>
 
                     <p className="text-xs text-gray-400">
@@ -253,31 +257,27 @@ export default function Transactions() {
                         : ""}
                     </p>
                   </div>
-
                 </div>
 
-                {/* RIGHT */}
                 <div className="text-right space-y-1">
-
-                  <p className={`text-lg font-bold ${
-                    amount >= 0 ? "text-green-600" : "text-gray-900"
-                  }`}>
-                    {amount >= 0 ? "+" : "-"}₹{Math.abs(amount).toLocaleString("en-IN")}
+                  <p
+                    className={`text-lg font-bold ${
+                      amount >= 0 ? "text-green-600" : "text-gray-900"
+                    }`}
+                  >
+                    {amount >= 0 ? "+" : "-"}₹
+                    {Math.abs(amount).toLocaleString("en-IN")}
                   </p>
 
-                  <button onClick={()=>deleteTransaction(t.id)}>
-                    <Trash2 className="text-red-500" size={16}/>
+                  <button onClick={() => deleteTransaction(t.id)}>
+                    <Trash2 className="text-red-500" size={16} />
                   </button>
-
                 </div>
-
               </div>
             );
           })
         )}
-
       </div>
-
     </div>
   );
 }

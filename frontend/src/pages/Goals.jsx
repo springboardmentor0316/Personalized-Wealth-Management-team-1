@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import API from "../api/axios";
+import toast from "react-hot-toast";
 import {
   Plus,
   Target,
@@ -13,7 +14,6 @@ import {
 } from "lucide-react";
 
 export default function Goals() {
-
   const [goals, setGoals] = useState([]);
   const [loading, setLoading] = useState(true);
   const [isOpen, setIsOpen] = useState(false);
@@ -24,7 +24,7 @@ export default function Goals() {
     name: "",
     target_amount: "",
     target_date: "",
-    monthly_contribution: ""
+    monthly_contribution: "",
   });
 
   useEffect(() => {
@@ -37,28 +37,34 @@ export default function Goals() {
       setGoals(res.data || []);
     } catch (err) {
       console.error(err);
+      toast.error("Failed to load goals");
     } finally {
       setLoading(false);
     }
   };
 
   const createGoal = async () => {
-    if (!form.goal_type || !form.target_amount || !form.target_date || !form.monthly_contribution) {
-      alert("Please fill all required fields");
+    if (
+      !form.goal_type ||
+      !form.target_amount ||
+      !form.target_date ||
+      !form.monthly_contribution
+    ) {
+      toast.error("Please fill all required fields");
       return;
     }
 
+    const toastId = toast.loading("Creating goal...");
+
     try {
       setCreating(true);
-
-      console.log("Goal Type:", form.goal_type);
 
       await API.post("/goals/", {
         goal_type: form.goal_type.toLowerCase(),
         name: form.name || null,
         target_amount: Number(form.target_amount),
         target_date: form.target_date,
-        monthly_contribution: Number(form.monthly_contribution)
+        monthly_contribution: Number(form.monthly_contribution),
       });
 
       setForm({
@@ -66,34 +72,37 @@ export default function Goals() {
         name: "",
         target_amount: "",
         target_date: "",
-        monthly_contribution: ""
+        monthly_contribution: "",
       });
 
       setIsOpen(false);
       fetchGoals();
 
+      toast.success("Goal created successfully", { id: toastId });
     } catch (err) {
       console.log(err.response?.data);
 
-      alert(
+      toast.error(
         err.response?.data?.detail?.[0]?.msg ||
-        err.response?.data?.detail ||
-        "Failed to create goal"
+          err.response?.data?.detail ||
+          "Failed to create goal",
+        { id: toastId },
       );
-
     } finally {
       setCreating(false);
     }
   };
 
   const deleteGoal = async (id) => {
-    if (!window.confirm("Delete this goal?")) return;
+    const toastId = toast.loading("Deleting goal...");
 
     try {
       await API.delete(`/goals/${id}`);
       fetchGoals();
+
+      toast.success("Goal deleted", { id: toastId });
     } catch {
-      alert("Delete failed");
+      toast.error("Delete failed", { id: toastId });
     }
   };
 
@@ -111,19 +120,20 @@ export default function Goals() {
   if (loading) {
     return (
       <div className="flex justify-center py-10">
-        <div className="animate-spin h-6 w-6 border-4 border-emerald-500 border-t-transparent rounded-full"></div>
+        {" "}
+        <div className="animate-spin h-6 w-6 border-4 border-emerald-500 border-t-transparent rounded-full"></div>{" "}
       </div>
     );
   }
 
   return (
     <div className="p-6 space-y-6 bg-gray-50 min-h-screen">
-
-      {/* HEADER */}
       <div className="flex justify-between items-center">
         <div>
           <h1 className="text-3xl font-bold">Financial Goals</h1>
-          <p className="text-gray-500">Plan and track your financial objectives</p>
+          <p className="text-gray-500">
+            Plan and track your financial objectives
+          </p>
         </div>
 
         <button
@@ -134,16 +144,14 @@ export default function Goals() {
         </button>
       </div>
 
-      {/* MODAL */}
       {isOpen && (
         <div className="fixed inset-0 bg-black/30 flex justify-center items-center z-50">
           <div className="bg-white p-6 rounded-2xl w-full max-w-md space-y-4">
-
             <h2 className="text-xl font-semibold">Create Goal</h2>
 
             <select
               value={form.goal_type}
-              onChange={(e)=>setForm({...form, goal_type:e.target.value})}
+              onChange={(e) => setForm({ ...form, goal_type: e.target.value })}
               className="w-full p-3 bg-gray-100 rounded-xl"
             >
               <option value="">Select Type</option>
@@ -160,7 +168,7 @@ export default function Goals() {
             <input
               placeholder="Goal Name (optional)"
               value={form.name}
-              onChange={(e)=>setForm({...form, name:e.target.value})}
+              onChange={(e) => setForm({ ...form, name: e.target.value })}
               className="w-full p-3 bg-gray-100 rounded-xl"
             />
 
@@ -168,14 +176,18 @@ export default function Goals() {
               type="number"
               placeholder="Target Amount"
               value={form.target_amount}
-              onChange={(e)=>setForm({...form, target_amount:e.target.value})}
+              onChange={(e) =>
+                setForm({ ...form, target_amount: e.target.value })
+              }
               className="w-full p-3 bg-gray-100 rounded-xl"
             />
 
             <input
               type="date"
               value={form.target_date}
-              onChange={(e)=>setForm({...form, target_date:e.target.value})}
+              onChange={(e) =>
+                setForm({ ...form, target_date: e.target.value })
+              }
               className="w-full p-3 bg-gray-100 rounded-xl"
             />
 
@@ -183,12 +195,14 @@ export default function Goals() {
               type="number"
               placeholder="Monthly Contribution"
               value={form.monthly_contribution}
-              onChange={(e)=>setForm({...form, monthly_contribution:e.target.value})}
+              onChange={(e) =>
+                setForm({ ...form, monthly_contribution: e.target.value })
+              }
               className="w-full p-3 bg-gray-100 rounded-xl"
             />
 
             <div className="flex justify-end gap-3">
-              <button onClick={()=>setIsOpen(false)}>Cancel</button>
+              <button onClick={() => setIsOpen(false)}>Cancel</button>
               <button
                 onClick={createGoal}
                 disabled={creating}
@@ -197,12 +211,10 @@ export default function Goals() {
                 {creating ? "Creating..." : "Create"}
               </button>
             </div>
-
           </div>
         </div>
       )}
 
-      {/* EMPTY */}
       {goals.length === 0 && (
         <div className="text-center py-12 text-gray-500">
           <p className="text-lg">No goals yet</p>
@@ -210,12 +222,9 @@ export default function Goals() {
         </div>
       )}
 
-      {/* GOALS */}
       {goals.length > 0 && (
         <div className="grid md:grid-cols-2 gap-6">
-
-          {goals.map(goal => {
-
+          {goals.map((goal) => {
             const Icon = goalIcons[goal.goal_type?.toLowerCase()] || Target;
 
             const target = Number(goal.target_amount || 0);
@@ -229,20 +238,21 @@ export default function Goals() {
               0,
               Math.round(
                 (new Date(goal.target_date) - new Date()) /
-                (1000 * 60 * 60 * 24 * 30)
-              )
+                  (1000 * 60 * 60 * 24 * 30),
+              ),
             );
 
             const projected = current + monthly * monthsRemaining;
 
             return (
-              <div key={goal.id} className="bg-white rounded-2xl p-6 shadow-sm space-y-4">
-
+              <div
+                key={goal.id}
+                className="bg-white rounded-2xl p-6 shadow-sm space-y-4"
+              >
                 <div className="flex justify-between items-start">
-
                   <div className="flex gap-3 items-center">
                     <div className="w-12 h-12 bg-emerald-100 rounded-xl flex items-center justify-center">
-                      <Icon className="text-emerald-600" size={22}/>
+                      <Icon className="text-emerald-600" size={22} />
                     </div>
 
                     <div>
@@ -255,13 +265,11 @@ export default function Goals() {
                     </div>
                   </div>
 
-                  <button onClick={()=>deleteGoal(goal.id)}>
-                    <Trash2 className="text-red-500" size={18}/>
+                  <button onClick={() => deleteGoal(goal.id)}>
+                    <Trash2 className="text-red-500" size={18} />
                   </button>
-
                 </div>
 
-                {/* PROGRESS */}
                 <div>
                   <div className="flex justify-between text-sm mb-2">
                     <span className="text-gray-500">Progress</span>
@@ -278,7 +286,6 @@ export default function Goals() {
                   </div>
                 </div>
 
-                {/* AMOUNTS */}
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <p className="text-xs text-gray-500">Current</p>
@@ -294,9 +301,7 @@ export default function Goals() {
                   </div>
                 </div>
 
-                {/* DETAILS */}
                 <div className="border-t pt-3 space-y-2 text-sm">
-
                   <div className="flex justify-between">
                     <span className="text-gray-500">Monthly</span>
                     <span className="font-medium">
@@ -309,7 +314,7 @@ export default function Goals() {
                     <span className="font-medium">
                       {new Date(goal.target_date).toLocaleDateString("en-IN", {
                         month: "short",
-                        year: "numeric"
+                        year: "numeric",
                       })}
                     </span>
                   </div>
@@ -327,16 +332,12 @@ export default function Goals() {
                       ₹{projected.toLocaleString("en-IN")}
                     </span>
                   </div>
-
                 </div>
-
               </div>
             );
           })}
-
         </div>
       )}
-
     </div>
   );
 }

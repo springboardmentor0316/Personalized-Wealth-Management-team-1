@@ -1,6 +1,13 @@
 import { useEffect, useState } from "react";
 import API from "../api/axios";
-import { TrendingUp, Target, Briefcase, DollarSign } from "lucide-react";
+import toast from "react-hot-toast";
+import {
+  TrendingUp,
+  Target,
+  Briefcase,
+  DollarSign,
+  RefreshCw,
+} from "lucide-react";
 
 import {
   AreaChart,
@@ -17,11 +24,13 @@ import {
 
 export default function Dashboard() {
   const [goals, setGoals] = useState([]);
-  const [summary, setSummary] = useState({});
   const [investments, setInvestments] = useState([]);
   const [transactions, setTransactions] = useState([]);
   const [user, setUser] = useState({});
+  const [summary, setSummary] = useState({});
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [lastUpdated, setLastUpdated] = useState(null);
 
   useEffect(() => {
     fetchAll();
@@ -29,16 +38,12 @@ export default function Dashboard() {
 
   const fetchAll = async () => {
     try {
-      // ✅ SAFE USER FETCH (handles 404)
       let userData = {};
       try {
         const userRes = await API.get("/users/me");
         userData = userRes.data;
-      } catch {
-        console.log("User API not available");
-      }
+      } catch {}
 
-      // ✅ FETCH OTHER DATA
       const [goalsRes, invRes, txnRes] = await Promise.all([
         API.get("/goals"),
         API.get("/investments/"),
@@ -54,15 +59,14 @@ export default function Dashboard() {
       setInvestments(invData);
       setTransactions(txnData);
 
-      // ✅ SAFE SUMMARY CALCULATION
       const totalValue = invData.reduce(
         (sum, i) => sum + Number(i.current_value || 0),
-        0
+        0,
       );
 
       const totalInvested = invData.reduce(
         (sum, i) => sum + Number(i.cost_basis || 0),
-        0
+        0,
       );
 
       const profit = totalValue - totalInvested;
@@ -73,23 +77,42 @@ export default function Dashboard() {
         profit,
       });
 
+      setLastUpdated(new Date());
     } catch (err) {
       console.error("Dashboard error:", err);
+      toast.error("Failed to load dashboard data");
     } finally {
       setLoading(false);
+    }
+  };
+
+  const refreshPrices = async () => {
+    const toastId = toast.loading("Refreshing market data...");
+
+    try {
+      setRefreshing(true);
+      await API.post("/investments/refresh-prices");
+      await fetchAll();
+      toast.success("Prices updated successfully", { id: toastId });
+    } catch (err) {
+      console.error("Refresh error:", err);
+      toast.error("Failed to refresh prices", { id: toastId });
+    } finally {
+      setRefreshing(false);
     }
   };
 
   if (loading) {
     return (
       <div className="flex justify-center py-20">
-        <div className="animate-spin h-8 w-8 border-4 border-emerald-500 border-t-transparent rounded-full"></div>
+        {" "}
+        <div className="animate-spin h-8 w-8 border-4 border-emerald-500 border-t-transparent rounded-full"></div>{" "}
       </div>
     );
   }
 
   const completedGoals = goals.filter(
-    (g) => g.monthly_contribution * 12 >= g.target_amount
+    (g) => g.monthly_contribution * 12 >= g.target_amount,
   ).length;
 
   const portfolioData = investments.map((item) => ({
@@ -102,36 +125,49 @@ export default function Dashboard() {
 
   return (
     <div className="p-6 space-y-6 bg-gray-50 min-h-screen">
-
       {/* HEADER */}
-      <div>
-        <h1 className="text-3xl font-bold">
-          Welcome back, {user?.name || "User"}!
-        </h1>
-        <p className="text-gray-500">{new Date().toDateString()}</p>
+      <div className="flex justify-between items-center">
+        <div>
+          <h1 className="text-3xl font-bold">
+            Welcome back, {user?.name || "User"}!
+          </h1>
+          <p className="text-gray-500">{new Date().toDateString()}</p>
+          {lastUpdated && (
+            <p className="text-xs text-gray-400 mt-1">
+              Last updated: {lastUpdated.toLocaleTimeString()}
+            </p>
+          )}
+        </div>
+
+        <button
+          onClick={refreshPrices}
+          className="flex items-center gap-2 bg-blue-500 text-white px-4 py-2 rounded-lg shadow-sm hover:bg-blue-600"
+        >
+          <RefreshCw size={16} className={refreshing ? "animate-spin" : ""} />
+          {refreshing ? "Refreshing..." : "Refresh Prices"}
+        </button>
       </div>
 
       {/* STATS */}
       <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
-
-        {/* PORTFOLIO */}
-        <div className="bg-white p-6 rounded-2xl shadow-sm flex justify-between">
+        <div className="bg-white p-6 rounded-2xl shadow-sm flex justify-between items-center">
           <div>
             <p className="text-sm text-gray-500">Total Portfolio Value</p>
             <h2 className="text-2xl font-bold mt-1">
               ₹{Number(summary?.total_value || 0).toLocaleString("en-IN")}
             </h2>
-            <p className={`${isProfit ? "text-green-600" : "text-red-600"} text-sm mt-1`}>
+            <p
+              className={`${isProfit ? "text-green-600" : "text-red-600"} text-sm mt-1`}
+            >
               {isProfit ? "+" : "-"}₹{Math.abs(profit).toLocaleString("en-IN")}
             </p>
           </div>
-          <div className="bg-blue-500 p-2 rounded-lg">
-            <Briefcase size={18} className="text-white" />
+          <div className="bg-blue-500/10 p-2 rounded-md flex items-center justify-center">
+            <Briefcase size={16} className="text-blue-600" />
           </div>
         </div>
 
-        {/* GOALS */}
-        <div className="bg-white p-6 rounded-2xl shadow-sm flex justify-between">
+        <div className="bg-white p-6 rounded-2xl shadow-sm flex justify-between items-center">
           <div>
             <p className="text-sm text-gray-500">Active Goals</p>
             <h2 className="text-2xl font-bold mt-1">{goals.length}</h2>
@@ -139,27 +175,27 @@ export default function Dashboard() {
               {completedGoals} achieved
             </p>
           </div>
-          <div className="bg-purple-500 p-2 rounded-lg">
-            <Target size={18} className="text-white" />
+          <div className="bg-purple-500/10 p-2 rounded-md flex items-center justify-center">
+            <Target size={16} className="text-purple-600" />
           </div>
         </div>
 
-        {/* PROFIT */}
-        <div className="bg-white p-6 rounded-2xl shadow-sm flex justify-between">
+        <div className="bg-white p-6 rounded-2xl shadow-sm flex justify-between items-center">
           <div>
             <p className="text-sm text-gray-500">Profit</p>
-            <h2 className={`text-2xl font-bold mt-1 ${isProfit ? "text-green-600" : "text-red-600"}`}>
+            <h2
+              className={`text-2xl font-bold mt-1 ${isProfit ? "text-green-600" : "text-red-600"}`}
+            >
               ₹{Math.abs(profit).toLocaleString("en-IN")}
             </h2>
             <p className="text-gray-500 text-sm mt-1">overall return</p>
           </div>
-          <div className="bg-green-500 p-2 rounded-lg">
-            <TrendingUp size={18} className="text-white" />
+          <div className="bg-green-500/10 p-2 rounded-md flex items-center justify-center">
+            <TrendingUp size={16} className="text-green-600" />
           </div>
         </div>
 
-        {/* INVESTED */}
-        <div className="bg-white p-6 rounded-2xl shadow-sm flex justify-between">
+        <div className="bg-white p-6 rounded-2xl shadow-sm flex justify-between items-center">
           <div>
             <p className="text-sm text-gray-500">Total Invested</p>
             <h2 className="text-2xl font-bold mt-1">
@@ -167,16 +203,14 @@ export default function Dashboard() {
             </h2>
             <p className="text-gray-500 text-sm mt-1">ROI active</p>
           </div>
-          <div className="bg-orange-500 p-2 rounded-lg">
-            <DollarSign size={18} className="text-white" />
+          <div className="bg-orange-500/10 p-2 rounded-md flex items-center justify-center">
+            <DollarSign size={16} className="text-orange-600" />
           </div>
         </div>
-
       </div>
 
       {/* CHARTS */}
       <div className="grid lg:grid-cols-2 gap-6">
-
         <div className="bg-white p-6 rounded-2xl shadow-sm">
           <h3 className="font-semibold mb-4">Portfolio Growth</h3>
           <div className="h-72">
@@ -186,7 +220,12 @@ export default function Dashboard() {
                 <XAxis dataKey="name" />
                 <YAxis />
                 <Tooltip />
-                <Area type="monotone" dataKey="value" stroke="#10b981" fill="#10b98133" />
+                <Area
+                  type="monotone"
+                  dataKey="value"
+                  stroke="#10b981"
+                  fill="#10b98133"
+                />
               </AreaChart>
             </ResponsiveContainer>
           </div>
@@ -207,13 +246,10 @@ export default function Dashboard() {
             </ResponsiveContainer>
           </div>
         </div>
-
       </div>
 
       {/* GOALS + TRANSACTIONS */}
       <div className="grid lg:grid-cols-2 gap-6">
-
-        {/* GOALS */}
         <div className="bg-white p-6 rounded-2xl shadow-sm">
           <h3 className="font-semibold mb-4">Goal Progress</h3>
 
@@ -244,7 +280,6 @@ export default function Dashboard() {
           )}
         </div>
 
-        {/* TRANSACTIONS */}
         <div className="bg-white p-6 rounded-2xl shadow-sm">
           <h3 className="font-semibold mb-4">Recent Transactions</h3>
 
@@ -253,22 +288,27 @@ export default function Dashboard() {
           ) : (
             <div className="space-y-3">
               {transactions.slice(0, 4).map((t) => {
-
                 const amount =
-                  (Number(t.quantity || 0) * Number(t.price || 0)) +
+                  Number(t.quantity || 0) * Number(t.price || 0) +
                   Number(t.fees || 0);
 
                 const signed = t.type === "sell" ? amount : -amount;
 
                 return (
-                  <div key={t.id} className="flex justify-between bg-gray-50 p-4 rounded-xl">
+                  <div
+                    key={t.id}
+                    className="flex justify-between bg-gray-50 p-4 rounded-xl"
+                  >
                     <div>
                       <p className="font-medium">{t.symbol}</p>
                       <p className="text-sm text-gray-500">{t.type}</p>
                     </div>
 
-                    <p className={`font-semibold ${signed >= 0 ? "text-green-600" : "text-red-600"}`}>
-                      {signed >= 0 ? "+" : "-"}₹{Math.abs(signed).toLocaleString("en-IN")}
+                    <p
+                      className={`font-semibold ${signed >= 0 ? "text-green-600" : "text-red-600"}`}
+                    >
+                      {signed >= 0 ? "+" : "-"}₹
+                      {Math.abs(signed).toLocaleString("en-IN")}
                     </p>
                   </div>
                 );
@@ -276,9 +316,7 @@ export default function Dashboard() {
             </div>
           )}
         </div>
-
       </div>
-
     </div>
   );
 }

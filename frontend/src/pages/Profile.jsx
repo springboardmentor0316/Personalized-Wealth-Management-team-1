@@ -1,8 +1,8 @@
 import { useState, useEffect } from "react";
 import API from "../api/axios";
+import toast from "react-hot-toast";
 
 export default function Profile() {
-
   const [activeTab, setActiveTab] = useState("personal");
   const [user, setUser] = useState({});
   const [originalUser, setOriginalUser] = useState({});
@@ -12,13 +12,12 @@ export default function Profile() {
 
   const BASE_URL = "http://127.0.0.1:8000";
 
-  const formatDate = (date) =>
-    date ? date.split("T")[0] : "";
+  const formatDate = (date) => (date ? date.split("T")[0] : "");
 
   const riskProfiles = [
     { value: "conservative", label: "Conservative" },
     { value: "moderate", label: "Moderate" },
-    { value: "aggressive", label: "Aggressive" }
+    { value: "aggressive", label: "Aggressive" },
   ];
 
   useEffect(() => {
@@ -31,15 +30,14 @@ export default function Profile() {
 
       const formatted = {
         ...res.data,
-        date_of_birth: formatDate(res.data?.date_of_birth)
+        date_of_birth: formatDate(res.data?.date_of_birth),
       };
 
       setUser(formatted);
       setOriginalUser(formatted);
       setSelectedRiskProfile(res.data?.risk_profile || "");
-
-    } catch (err) {
-      console.error(err);
+    } catch {
+      toast.error("Failed to load profile");
     } finally {
       setLoading(false);
     }
@@ -55,69 +53,74 @@ export default function Profile() {
   };
 
   const updateProfile = async () => {
+    const toastId = toast.loading("Updating profile...");
+
     try {
       await API.put("/profile/", user);
       setOriginalUser(user);
-      alert("Profile updated successfully");
+
+      toast.success("Profile updated successfully", { id: toastId });
     } catch {
-      alert("Update failed");
+      toast.error("Update failed", { id: toastId });
     }
   };
 
   const updateRisk = async () => {
+    const toastId = toast.loading("Updating risk profile...");
+
     try {
       await API.put("/profile/", {
-        risk_profile: selectedRiskProfile
+        risk_profile: selectedRiskProfile,
       });
 
       const updated = { ...user, risk_profile: selectedRiskProfile };
       setUser(updated);
       setOriginalUser(updated);
 
-      alert("Risk profile updated");
-
+      toast.success("Risk profile updated", { id: toastId });
     } catch {
-      alert("Update failed");
+      toast.error("Update failed", { id: toastId });
     }
   };
 
   const uploadPhoto = async () => {
     if (!file) return;
 
+    const toastId = toast.loading("Uploading photo...");
+
     const formData = new FormData();
     formData.append("file", file);
 
     try {
       const res = await API.post("/profile/upload-photo", formData, {
-        headers: { "Content-Type": "multipart/form-data" }
+        headers: { "Content-Type": "multipart/form-data" },
       });
 
       setUser({
         ...user,
-        profile_picture: res.data.profile_picture
+        profile_picture: res.data.profile_picture,
       });
 
       setFile(null);
-      alert("Photo uploaded successfully");
 
+      toast.success("Photo uploaded successfully", { id: toastId });
     } catch {
-      alert("Upload failed");
+      toast.error("Upload failed", { id: toastId });
     }
   };
 
   if (loading) {
     return (
       <div className="flex justify-center py-20">
-        <div className="animate-spin h-8 w-8 border-4 border-emerald-500 border-t-transparent rounded-full"></div>
+        {" "}
+        <div className="animate-spin h-8 w-8 border-4 border-emerald-500 border-t-transparent rounded-full"></div>{" "}
       </div>
     );
   }
 
   return (
     <div className="bg-gray-50 min-h-screen">
-
       <div className="max-w-7xl mx-auto p-6 space-y-8">
-
         {/* HEADER */}
         <div>
           <h1 className="text-3xl font-bold">Profile</h1>
@@ -125,10 +128,8 @@ export default function Profile() {
         </div>
 
         <div className="grid lg:grid-cols-3 gap-6">
-
           {/* PROFILE CARD */}
           <div className="bg-white p-6 rounded-2xl shadow-sm text-center space-y-4">
-
             {user?.profile_picture ? (
               <img
                 src={`${BASE_URL}/${user.profile_picture}`}
@@ -138,7 +139,10 @@ export default function Profile() {
             ) : (
               <div className="w-28 h-28 rounded-full bg-emerald-100 flex items-center justify-center mx-auto text-3xl font-bold text-emerald-600">
                 {user?.name
-                  ? user.name.split(" ").map(n => n[0]).join("")
+                  ? user.name
+                      .split(" ")
+                      .map((n) => n[0])
+                      .join("")
                   : "U"}
               </div>
             )}
@@ -148,7 +152,7 @@ export default function Profile() {
                 <input
                   type="file"
                   id="fileUpload"
-                  onChange={(e)=>setFile(e.target.files[0])}
+                  onChange={(e) => setFile(e.target.files[0])}
                   className="hidden"
                 />
 
@@ -173,15 +177,17 @@ export default function Profile() {
             <h2 className="text-lg font-semibold">{user?.name}</h2>
             <p className="text-gray-500 text-sm">{user?.email}</p>
 
+            {/* ✅ RESTORED KYC + RISK */}
             <div className="space-y-3 mt-3">
-
               <div className="bg-gray-100 rounded-xl px-4 py-2 flex justify-between">
                 <span className="text-sm text-gray-500">KYC</span>
-                <span className={`text-sm font-medium ${
-                  user?.kyc_status === "verified"
-                    ? "text-green-600"
-                    : "text-yellow-600"
-                }`}>
+                <span
+                  className={`text-sm font-medium ${
+                    user?.kyc_status === "verified"
+                      ? "text-green-600"
+                      : "text-yellow-600"
+                  }`}
+                >
                   {user?.kyc_status || "pending"}
                 </span>
               </div>
@@ -192,43 +198,39 @@ export default function Profile() {
                   {user?.risk_profile}
                 </span>
               </div>
-
             </div>
-
           </div>
 
           {/* SETTINGS */}
           <div className="lg:col-span-2 space-y-6">
-
-            {/* Tabs */}
             <div className="flex bg-gray-100 rounded-full p-1">
               <button
-                onClick={()=>setActiveTab("personal")}
+                onClick={() => setActiveTab("personal")}
                 className={`flex-1 py-2 rounded-full ${
-                  activeTab==="personal" ? "bg-white shadow-sm" : "text-gray-400"
+                  activeTab === "personal"
+                    ? "bg-white shadow-sm"
+                    : "text-gray-400"
                 }`}
               >
                 Personal
               </button>
 
               <button
-                onClick={()=>setActiveTab("risk")}
+                onClick={() => setActiveTab("risk")}
                 className={`flex-1 py-2 rounded-full ${
-                  activeTab==="risk" ? "bg-white shadow-sm" : "text-gray-400"
+                  activeTab === "risk" ? "bg-white shadow-sm" : "text-gray-400"
                 }`}
               >
                 Risk
               </button>
             </div>
 
-            {/* PERSONAL TAB */}
+            {/* PERSONAL */}
             {activeTab === "personal" && (
               <div className="bg-white p-6 rounded-2xl shadow-sm space-y-4">
-
                 <input
-                  placeholder="Name"
                   value={user?.name || ""}
-                  onChange={(e)=>setUser({...user,name:e.target.value})}
+                  onChange={(e) => setUser({ ...user, name: e.target.value })}
                   className="w-full p-3 rounded-xl bg-gray-100"
                 />
 
@@ -239,23 +241,25 @@ export default function Profile() {
                 />
 
                 <input
-                  placeholder="Phone"
                   value={user?.phone || ""}
-                  onChange={(e)=>setUser({...user,phone:e.target.value})}
+                  onChange={(e) => setUser({ ...user, phone: e.target.value })}
                   className="w-full p-3 rounded-xl bg-gray-100"
                 />
 
                 <input
-                  placeholder="Address"
                   value={user?.address || ""}
-                  onChange={(e)=>setUser({...user,address:e.target.value})}
+                  onChange={(e) =>
+                    setUser({ ...user, address: e.target.value })
+                  }
                   className="w-full p-3 rounded-xl bg-gray-100"
                 />
 
                 <input
                   type="date"
                   value={user?.date_of_birth || ""}
-                  onChange={(e)=>setUser({...user,date_of_birth:e.target.value})}
+                  onChange={(e) =>
+                    setUser({ ...user, date_of_birth: e.target.value })
+                  }
                   className="w-full p-3 rounded-xl bg-gray-100"
                 />
 
@@ -267,20 +271,18 @@ export default function Profile() {
                     Save Changes
                   </button>
                 )}
-
               </div>
             )}
 
-            {/* RISK TAB */}
+            {/* RISK */}
             {activeTab === "risk" && (
               <div className="bg-white p-6 rounded-2xl shadow-sm space-y-4">
-
-                {riskProfiles.map(p => (
+                {riskProfiles.map((p) => (
                   <div
                     key={p.value}
-                    onClick={()=>setSelectedRiskProfile(p.value)}
+                    onClick={() => setSelectedRiskProfile(p.value)}
                     className={`p-4 rounded-xl cursor-pointer ${
-                      selectedRiskProfile===p.value
+                      selectedRiskProfile === p.value
                         ? "bg-emerald-50"
                         : "bg-gray-100"
                     }`}
@@ -297,16 +299,11 @@ export default function Profile() {
                     Update Risk Profile
                   </button>
                 )}
-
               </div>
             )}
-
           </div>
-
         </div>
-
       </div>
-
     </div>
   );
 }
