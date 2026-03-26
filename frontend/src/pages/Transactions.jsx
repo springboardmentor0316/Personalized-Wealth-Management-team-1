@@ -50,28 +50,15 @@ export default function Transactions() {
     try {
       setCreating(true);
 
-      const quantity = Number(form.quantity);
-      const price = Number(form.price);
-      const fees = Number(form.fees || 0);
-
-      const res = await API.post("/transactions/", {
+      await API.post("/transactions/", {
         symbol: form.symbol.toUpperCase(),
         type: form.type,
-        quantity,
-        price,
-        fees,
+        quantity: Number(form.quantity),
+        price: Number(form.price),
+        fees: Number(form.fees || 0),
       });
 
-      console.log("Created:", res.data);
-
-      setForm({
-        symbol: "",
-        type: "buy",
-        quantity: "",
-        price: "",
-        fees: "",
-      });
-
+      setForm({ symbol: "", type: "buy", quantity: "", price: "", fees: "" });
       setIsOpen(false);
       await fetchTransactions();
 
@@ -92,7 +79,6 @@ export default function Transactions() {
     try {
       await API.delete(`/transactions/${id}`);
       await fetchTransactions();
-
       toast.success("Transaction deleted", { id: toastId });
     } catch {
       toast.error("Delete failed", { id: toastId });
@@ -100,10 +86,8 @@ export default function Transactions() {
   };
 
   const getIcon = (type) => {
-    if (type === "buy")
-      return <ArrowUpCircle className="text-green-600" size={20} />;
-    if (type === "sell")
-      return <ArrowDownCircle className="text-red-600" size={20} />;
+    if (type === "buy") return <ArrowUpCircle className="text-green-600" size={20} />;
+    if (type === "sell") return <ArrowDownCircle className="text-red-600" size={20} />;
     return <DollarSign className="text-emerald-600" size={20} />;
   };
 
@@ -114,20 +98,14 @@ export default function Transactions() {
   };
 
   const getAmount = (t) => {
-    const quantity = Number(t.quantity || 0);
-    const price = Number(t.price || 0);
-    const fees = Number(t.fees || 0);
-
-    const total = quantity * price + fees;
-
+    const total = Number(t.quantity || 0) * Number(t.price || 0) + Number(t.fees || 0);
     return t.type === "sell" ? total : -total;
   };
 
   if (loading) {
     return (
       <div className="flex justify-center py-20">
-        {" "}
-        <div className="animate-spin h-8 w-8 border-4 border-emerald-500 border-t-transparent rounded-full"></div>{" "}
+        <div className="animate-spin h-8 w-8 border-4 border-emerald-500 border-t-transparent rounded-full"></div>
       </div>
     );
   }
@@ -138,9 +116,7 @@ export default function Transactions() {
       <div className="flex justify-between items-center">
         <div>
           <h1 className="text-3xl font-bold">Transactions</h1>
-          <p className="text-gray-500">
-            View and manage your transaction history
-          </p>
+          <p className="text-gray-500">View and manage your transaction history</p>
         </div>
 
         <button
@@ -168,7 +144,7 @@ export default function Transactions() {
             </select>
 
             <input
-              placeholder="Symbol"
+              placeholder="Symbol (e.g. AAPL, TCS.NS)"
               value={form.symbol}
               onChange={(e) => setForm({ ...form, symbol: e.target.value })}
               className="w-full p-3 bg-gray-100 rounded-xl"
@@ -184,7 +160,7 @@ export default function Transactions() {
 
             <input
               type="number"
-              placeholder="Price"
+              placeholder="Price per unit"
               value={form.price}
               onChange={(e) => setForm({ ...form, price: e.target.value })}
               className="w-full p-3 bg-gray-100 rounded-xl"
@@ -192,14 +168,16 @@ export default function Transactions() {
 
             <input
               type="number"
-              placeholder="Fees"
+              placeholder="Fees (optional)"
               value={form.fees}
               onChange={(e) => setForm({ ...form, fees: e.target.value })}
               className="w-full p-3 bg-gray-100 rounded-xl"
             />
 
             <div className="flex justify-end gap-3">
-              <button onClick={() => setIsOpen(false)}>Cancel</button>
+              <button onClick={() => setIsOpen(false)} className="px-4 py-2 text-gray-600">
+                Cancel
+              </button>
               <button
                 onClick={createTransaction}
                 disabled={creating}
@@ -217,9 +195,7 @@ export default function Transactions() {
         <h2 className="font-semibold text-lg">Transaction History</h2>
 
         {transactions.length === 0 ? (
-          <div className="text-center py-10 text-gray-500">
-            No transactions yet
-          </div>
+          <div className="text-center py-10 text-gray-500">No transactions yet</div>
         ) : (
           transactions.map((t) => {
             const amount = getAmount(t);
@@ -230,43 +206,36 @@ export default function Transactions() {
                 className="flex justify-between items-center bg-gray-50 p-4 rounded-xl hover:bg-gray-100 transition"
               >
                 <div className="flex items-center gap-4">
-                  <div className="w-10 h-10 bg-white rounded-full flex items-center justify-center">
+                  <div className="w-10 h-10 bg-white rounded-full flex items-center justify-center shadow-sm">
                     {getIcon(t.type)}
                   </div>
 
                   <div>
                     <div className="flex items-center gap-2">
                       <h4 className="font-semibold">{t.symbol}</h4>
-                      <span
-                        className={`px-2 py-0.5 text-xs rounded-full capitalize ${getBadge(t.type)}`}
-                      >
+                      <span className={`px-2 py-0.5 text-xs rounded-full capitalize ${getBadge(t.type)}`}>
                         {t.type}
                       </span>
                     </div>
 
                     <p className="text-sm text-gray-500">
-                      {t.quantity} units @ ₹
-                      {Number(t.price).toLocaleString("en-IN")}
+                      {t.quantity} units @ ₹{Number(t.price).toLocaleString("en-IN")}
                       {Number(t.fees) > 0 &&
                         ` • Fees: ₹${Number(t.fees).toLocaleString("en-IN")}`}
                     </p>
 
+                    {/* FIX: was t.created_at — transactions use executed_at */}
                     <p className="text-xs text-gray-400">
-                      {t.created_at
-                        ? new Date(t.created_at).toLocaleString("en-IN")
+                      {t.executed_at
+                        ? new Date(t.executed_at).toLocaleString("en-IN")
                         : ""}
                     </p>
                   </div>
                 </div>
 
                 <div className="text-right space-y-1">
-                  <p
-                    className={`text-lg font-bold ${
-                      amount >= 0 ? "text-green-600" : "text-gray-900"
-                    }`}
-                  >
-                    {amount >= 0 ? "+" : "-"}₹
-                    {Math.abs(amount).toLocaleString("en-IN")}
+                  <p className={`text-lg font-bold ${amount >= 0 ? "text-green-600" : "text-gray-900"}`}>
+                    {amount >= 0 ? "+" : "-"}₹{Math.abs(amount).toLocaleString("en-IN")}
                   </p>
 
                   <button onClick={() => deleteTransaction(t.id)}>

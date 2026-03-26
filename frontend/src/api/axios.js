@@ -1,7 +1,7 @@
 import axios from "axios";
 
 const API = axios.create({
-  baseURL: "http://127.0.0.1:8000"
+  baseURL: import.meta.env.VITE_API_URL || "http://127.0.0.1:8000"
 });
 
 // Attach token
@@ -19,15 +19,18 @@ API.interceptors.response.use(
   async (error) => {
     const originalRequest = error.config;
 
-    //  Prevent crash
     if (!originalRequest) return Promise.reject(error);
+
+    // Prevent retry loop on refresh endpoint
+    if (originalRequest.url.includes("/auth/refresh")) {
+      return Promise.reject(error);
+    }
 
     if (error.response?.status === 401 && !originalRequest._retry) {
       originalRequest._retry = true;
 
       const refresh = localStorage.getItem("refresh_token");
 
-      //  No refresh token
       if (!refresh) {
         localStorage.clear();
         window.location.href = "/login";
@@ -35,10 +38,9 @@ API.interceptors.response.use(
       }
 
       try {
-        const res = await axios.post(
-        "http://127.0.0.1:8000/auth/refresh",
-         { token: refresh }
-        );
+        const res = await API.post("/auth/refresh", {
+          token: refresh
+        });
 
         const newToken = res.data.access_token;
         localStorage.setItem("access_token", newToken);
@@ -47,7 +49,8 @@ API.interceptors.response.use(
 
         return API(originalRequest);
 
-      } catch {
+      } catch (err) {
+        console.error("Refresh token failed", err);
         localStorage.clear();
         window.location.href = "/login";
       }

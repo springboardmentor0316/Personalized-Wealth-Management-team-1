@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import API from "../api/axios";
 import toast from "react-hot-toast";
 
@@ -10,7 +10,8 @@ export default function Profile() {
   const [file, setFile] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  const BASE_URL = "http://127.0.0.1:8000";
+  const BASE_URL =
+    import.meta.env.VITE_API_URL || "http://127.0.0.1:8000";
 
   const formatDate = (date) => (date ? date.split("T")[0] : "");
 
@@ -20,11 +21,8 @@ export default function Profile() {
     { value: "aggressive", label: "Aggressive" },
   ];
 
-  useEffect(() => {
-    fetchProfile();
-  }, []);
-
-  const fetchProfile = async () => {
+  // ✅ FIXED: wrapped in useCallback
+  const fetchProfile = useCallback(async () => {
     try {
       const res = await API.get("/profile/");
 
@@ -36,12 +34,18 @@ export default function Profile() {
       setUser(formatted);
       setOriginalUser(formatted);
       setSelectedRiskProfile(res.data?.risk_profile || "");
-    } catch {
+    } catch (err) {
+      console.error(err);
       toast.error("Failed to load profile");
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
+
+  // ✅ FIXED: dependency added
+  useEffect(() => {
+    fetchProfile();
+  }, [fetchProfile]);
 
   const isChanged = () => {
     return (
@@ -56,11 +60,19 @@ export default function Profile() {
     const toastId = toast.loading("Updating profile...");
 
     try {
-      await API.put("/profile/", user);
+      const payload = {
+        name: user.name,
+        phone: user.phone,
+        address: user.address,
+        date_of_birth: user.date_of_birth || null,
+      };
+
+      await API.put("/profile/", payload);
       setOriginalUser(user);
 
       toast.success("Profile updated successfully", { id: toastId });
-    } catch {
+    } catch (err) {
+      console.error(err);
       toast.error("Update failed", { id: toastId });
     }
   };
@@ -78,7 +90,8 @@ export default function Profile() {
       setOriginalUser(updated);
 
       toast.success("Risk profile updated", { id: toastId });
-    } catch {
+    } catch (err) {
+      console.error(err);
       toast.error("Update failed", { id: toastId });
     }
   };
@@ -104,23 +117,29 @@ export default function Profile() {
       setFile(null);
 
       toast.success("Photo uploaded successfully", { id: toastId });
-    } catch {
+    } catch (err) {
+      console.error(err);
       toast.error("Upload failed", { id: toastId });
     }
   };
 
   if (loading) {
     return (
-      <div className="flex justify-center py-20">
-        {" "}
-        <div className="animate-spin h-8 w-8 border-4 border-emerald-500 border-t-transparent rounded-full"></div>{" "}
+      <div className="flex flex-col items-center justify-center py-20">
+        <div className="animate-spin h-8 w-8 border-4 border-emerald-500 border-t-transparent rounded-full"></div>
+        <p className="text-gray-500 mt-4">Loading profile...</p>
       </div>
     );
   }
 
+  const imageUrl = user.profile_picture?.startsWith("http")
+    ? user.profile_picture
+    : `${BASE_URL}/${user.profile_picture}`;
+
   return (
     <div className="bg-gray-50 min-h-screen">
       <div className="max-w-7xl mx-auto p-6 space-y-8">
+
         {/* HEADER */}
         <div>
           <h1 className="text-3xl font-bold">Profile</h1>
@@ -128,11 +147,13 @@ export default function Profile() {
         </div>
 
         <div className="grid lg:grid-cols-3 gap-6">
+
           {/* PROFILE CARD */}
           <div className="bg-white p-6 rounded-2xl shadow-sm text-center space-y-4">
+
             {user?.profile_picture ? (
               <img
-                src={`${BASE_URL}/${user.profile_picture}`}
+                src={imageUrl}
                 alt="profile"
                 className="w-28 h-28 rounded-full mx-auto object-cover"
               />
@@ -152,7 +173,14 @@ export default function Profile() {
                 <input
                   type="file"
                   id="fileUpload"
-                  onChange={(e) => setFile(e.target.files[0])}
+                  onChange={(e) => {
+                    const selected = e.target.files[0];
+                    if (!selected.type.startsWith("image/")) {
+                      toast.error("Only image files allowed");
+                      return;
+                    }
+                    setFile(selected);
+                  }}
                   className="hidden"
                 />
 
@@ -177,17 +205,14 @@ export default function Profile() {
             <h2 className="text-lg font-semibold">{user?.name}</h2>
             <p className="text-gray-500 text-sm">{user?.email}</p>
 
-            {/* ✅ RESTORED KYC + RISK */}
             <div className="space-y-3 mt-3">
               <div className="bg-gray-100 rounded-xl px-4 py-2 flex justify-between">
                 <span className="text-sm text-gray-500">KYC</span>
-                <span
-                  className={`text-sm font-medium ${
-                    user?.kyc_status === "verified"
-                      ? "text-green-600"
-                      : "text-yellow-600"
-                  }`}
-                >
+                <span className={`text-sm font-medium ${
+                  user?.kyc_status === "verified"
+                    ? "text-green-600"
+                    : "text-yellow-600"
+                }`}>
                   {user?.kyc_status || "pending"}
                 </span>
               </div>
@@ -203,6 +228,7 @@ export default function Profile() {
 
           {/* SETTINGS */}
           <div className="lg:col-span-2 space-y-6">
+
             <div className="flex bg-gray-100 rounded-full p-1">
               <button
                 onClick={() => setActiveTab("personal")}
@@ -218,89 +244,50 @@ export default function Profile() {
               <button
                 onClick={() => setActiveTab("risk")}
                 className={`flex-1 py-2 rounded-full ${
-                  activeTab === "risk" ? "bg-white shadow-sm" : "text-gray-400"
+                  activeTab === "risk"
+                    ? "bg-white shadow-sm"
+                    : "text-gray-400"
                 }`}
               >
                 Risk
               </button>
             </div>
 
-            {/* PERSONAL */}
             {activeTab === "personal" && (
               <div className="bg-white p-6 rounded-2xl shadow-sm space-y-4">
-                <input
-                  value={user?.name || ""}
-                  onChange={(e) => setUser({ ...user, name: e.target.value })}
-                  className="w-full p-3 rounded-xl bg-gray-100"
-                />
-
-                <input
-                  value={user?.email || ""}
-                  disabled
-                  className="w-full p-3 rounded-xl bg-gray-100"
-                />
-
-                <input
-                  value={user?.phone || ""}
-                  onChange={(e) => setUser({ ...user, phone: e.target.value })}
-                  className="w-full p-3 rounded-xl bg-gray-100"
-                />
-
-                <input
-                  value={user?.address || ""}
-                  onChange={(e) =>
-                    setUser({ ...user, address: e.target.value })
-                  }
-                  className="w-full p-3 rounded-xl bg-gray-100"
-                />
-
-                <input
-                  type="date"
-                  value={user?.date_of_birth || ""}
-                  onChange={(e) =>
-                    setUser({ ...user, date_of_birth: e.target.value })
-                  }
-                  className="w-full p-3 rounded-xl bg-gray-100"
-                />
+                <input value={user?.name || ""} onChange={(e) => setUser({ ...user, name: e.target.value })} className="w-full p-3 rounded-xl bg-gray-100" />
+                <input value={user?.email || ""} disabled className="w-full p-3 rounded-xl bg-gray-100" />
+                <input value={user?.phone || ""} onChange={(e) => setUser({ ...user, phone: e.target.value })} className="w-full p-3 rounded-xl bg-gray-100" />
+                <input value={user?.address || ""} onChange={(e) => setUser({ ...user, address: e.target.value })} className="w-full p-3 rounded-xl bg-gray-100" />
+                <input type="date" value={user?.date_of_birth || ""} onChange={(e) => setUser({ ...user, date_of_birth: e.target.value })} className="w-full p-3 rounded-xl bg-gray-100" />
 
                 {isChanged() && (
-                  <button
-                    onClick={updateProfile}
-                    className="bg-emerald-600 text-white px-6 py-2 rounded-xl"
-                  >
+                  <button onClick={updateProfile} className="bg-emerald-600 text-white px-6 py-2 rounded-xl">
                     Save Changes
                   </button>
                 )}
               </div>
             )}
 
-            {/* RISK */}
             {activeTab === "risk" && (
               <div className="bg-white p-6 rounded-2xl shadow-sm space-y-4">
                 {riskProfiles.map((p) => (
-                  <div
-                    key={p.value}
-                    onClick={() => setSelectedRiskProfile(p.value)}
+                  <div key={p.value} onClick={() => setSelectedRiskProfile(p.value)}
                     className={`p-4 rounded-xl cursor-pointer ${
-                      selectedRiskProfile === p.value
-                        ? "bg-emerald-50"
-                        : "bg-gray-100"
-                    }`}
-                  >
+                      selectedRiskProfile === p.value ? "bg-emerald-50" : "bg-gray-100"
+                    }`}>
                     {p.label}
                   </div>
                 ))}
 
                 {selectedRiskProfile !== originalUser?.risk_profile && (
-                  <button
-                    onClick={updateRisk}
-                    className="bg-emerald-600 text-white px-6 py-2 rounded-xl"
-                  >
+                  <button onClick={updateRisk} className="bg-emerald-600 text-white px-6 py-2 rounded-xl">
                     Update Risk Profile
                   </button>
                 )}
               </div>
             )}
+
           </div>
         </div>
       </div>

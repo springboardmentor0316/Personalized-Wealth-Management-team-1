@@ -1,88 +1,75 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, UploadFile, File
 from sqlalchemy.orm import Session
-from jose import jwt,JWTError, ExpiredSignatureError
 from fastapi.security import OAuth2PasswordBearer
-from app.database import get_db
-from app.models.user import User
-from app.core.jwt import SECRET_KEY, ALGORITHM
-from app.schemas.user import UpdateProfile
-from app.schemas.user import UserResponse
-from fastapi import UploadFile, File
 import shutil
 import uuid
+import os
+import logging
 
+from app.database import get_db
+from app.models.user import User
+from app.core.jwt import decode_token
+from app.schemas.user import UpdateProfile, UserResponse
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/profile", tags=["Profile"])
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="auth/login")
 
 
+# ─── GET CURRENT USER ───────────────────────────────────────────────────────
+
 def get_current_user(
     token: str = Depends(oauth2_scheme),
     db: Session = Depends(get_db)
 ):
+    payload = decode_token(token)
 
-    try:
-        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
-        email = payload.get("sub")
-        if email is None:
-            raise HTTPException(
-                status_code=401,
-                detail="Invalid token payload"
-    )
+    if not payload or payload.get("type") != "access":
+        raise HTTPException(status_code=401, detail="Invalid or expired token")
 
-    except ExpiredSignatureError:
-        raise HTTPException(
-        status_code=401,
-        detail="Token has expired"
-    )
+    user_id = payload.get("user_id")
 
-    except JWTError:
-        raise HTTPException(
-        status_code=401,
-        detail="Invalid token"
-    )
+    if not user_id:
+        raise HTTPException(status_code=401, detail="Invalid token payload")
 
-    user = db.query(User).filter(User.email == email).first()
+    user = db.query(User).filter(User.id == user_id).first()
 
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
 
     return user
 
+
+# ─── GET PROFILE ────────────────────────────────────────────────────────────
+
 @router.get("/", response_model=UserResponse)
 def get_profile(current_user: User = Depends(get_current_user)):
-
     return current_user
 
-@router.put("/")
+
+# ─── UPDATE PROFILE ─────────────────────────────────────────────────────────
+
+@router.put("/", response_model=UserResponse)
 def update_profile(
     data: UpdateProfile,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
 
-    if data.name:
-        current_user.name = data.name
-
-    if data.phone:
-        current_user.phone = data.phone
-
-    if data.address:
-        current_user.address = data.address
-
-    if data.date_of_birth:
-        current_user.date_of_birth = data.date_of_birth
-
-    if data.risk_profile:
-        current_user.risk_profile = data.risk_profile
+    for field, value in data.dict(exclude_unset=True).items():
+        setattr(current_user, field, value)
 
     db.commit()
     db.refresh(current_user)
 
-    return {"message": "Profile updated"}
+    logger.info(f"Profile updated for user_id={current_user.id}")
+
+    return current_user
 
 
+# ─── UPLOAD PHOTO ───────────────────────────────────────────────────────────
 
 @router.post("/upload-photo")
 def upload_photo(
@@ -90,6 +77,24 @@ def upload_photo(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
+    ALLOWED_TYPES = ["image/jpeg", "image/png", "image/jpg"]
+    MAX_SIZE = 2 * 1024 * 1024  # 2MB
+
+    if file.content_type not in ALLOWED_TYPES:
+        raise HTTPException(status_code=400, detail="Invalid file type")
+
+    content = file.file.read()
+    if len(content) > MAX_SIZE:
+        raise HTTPException(status_code=400, detail="File too large")
+
+    file.file.seek(0)
+
+    os.makedirs("uploads", exist_ok=True)
+
+    # Delete old file
+    if current_user.profile_picture and os.path.exists(current_user.profile_picture):
+        os.remove(current_user.profile_picture)
+
     file_path = f"uploads/{uuid.uuid4()}_{file.filename}"
 
     with open(file_path, "wb") as buffer:
@@ -98,4 +103,9 @@ def upload_photo(
     current_user.profile_picture = file_path
     db.commit()
 
-    return {"message": "Photo uploaded"}
+    logger.info(f"Profile photo updated for user_id={current_user.id}")
+
+    return {
+        "message": "Photo uploaded successfully",
+        "file_path": file_path
+    }
