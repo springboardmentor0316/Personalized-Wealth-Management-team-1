@@ -26,9 +26,14 @@ def create_transaction(
     if data.quantity <= 0 or data.price <= 0:
         raise HTTPException(status_code=400, detail="Invalid quantity or price")
 
+    # ✅ Normalize symbol
+    symbol = data.symbol.upper()
+    if "." not in symbol:
+        symbol = symbol + ".NS"
+
     investment = db.query(Investment).filter(
         Investment.user_id == current_user.id,
-        Investment.symbol == data.symbol
+        Investment.symbol == symbol
     ).first()
 
     # ─── BUY ─────────────────────────────
@@ -47,7 +52,7 @@ def create_transaction(
         else:
             investment = Investment(
                 user_id=current_user.id,
-                symbol=data.symbol,
+                symbol=symbol,
                 asset_type=AssetType.stock,
                 units=data.quantity,
                 avg_buy_price=data.price,
@@ -86,7 +91,7 @@ def create_transaction(
     # ─── SAVE TRANSACTION ────────────────
     transaction = Transaction(
         user_id=current_user.id,
-        symbol=data.symbol,
+        symbol=symbol,
         type=data.type,
         quantity=data.quantity,
         price=data.price,
@@ -98,10 +103,9 @@ def create_transaction(
     db.commit()
     db.refresh(transaction)
 
-    logger.info(f"Transaction created: {data.symbol} {data.type}")
+    logger.info(f"Transaction created: {symbol} {data.type}")
 
     return transaction
-
 
 
 @router.get("/", response_model=list[TransactionResponse])

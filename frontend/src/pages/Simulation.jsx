@@ -2,8 +2,14 @@ import { useState, useEffect } from "react";
 import API from "../api/axios";
 import toast from "react-hot-toast";
 import {
-  AreaChart, Area, XAxis, YAxis, Tooltip,
-  CartesianGrid, ResponsiveContainer, Legend,
+  AreaChart,
+  Area,
+  XAxis,
+  YAxis,
+  Tooltip,
+  CartesianGrid,
+  ResponsiveContainer,
+  Legend,
 } from "recharts";
 import { Play, History, Trash2 } from "lucide-react";
 
@@ -22,7 +28,9 @@ export default function Simulation() {
   const [historyLoading, setHistoryLoading] = useState(false);
 
   // FIX: fetch history on mount
-  useEffect(() => { fetchHistory(); }, []);
+  useEffect(() => {
+    fetchHistory();
+  }, []);
 
   const fetchHistory = async () => {
     setHistoryLoading(true);
@@ -116,16 +124,29 @@ export default function Simulation() {
   };
 
   return (
-    <div className="p-6 space-y-6 bg-gray-50 min-h-screen">
+    <div
+      className={`p-6 space-y-6 bg-gray-50 ${
+        showHistory
+          ? "min-h-screen overflow-y-auto"
+          : "h-[calc(100vh-64px)] overflow-hidden"
+      }`}
+    >
       {/* HEADER */}
       <div className="flex justify-between items-center">
         <div>
           <h1 className="text-3xl font-bold">What-If Simulation</h1>
-          <p className="text-gray-500">Compare different investment strategies over time</p>
+          <p className="text-gray-500">
+            Compare different investment strategies over time
+          </p>
         </div>
         {/* FIX: toggle to show simulation history */}
         <button
-          onClick={() => setShowHistory(!showHistory)}
+          onClick={() => {
+            setShowHistory(!showHistory);
+            setTimeout(() => {
+              window.scrollTo({ top: 200, behavior: "smooth" });
+            }, 100);
+          }}
           className="flex items-center gap-2 bg-white border border-gray-200 px-4 py-2 rounded-xl hover:bg-gray-50 shadow-sm"
         >
           <History size={16} />
@@ -150,11 +171,16 @@ export default function Simulation() {
                 <div>
                   <p className="font-medium">{sim.scenario_name}</p>
                   <p className="text-sm text-gray-500">
-                    ₹{Number(sim.assumptions.monthly_investment).toLocaleString("en-IN")}/mo ·{" "}
-                    {sim.assumptions.years} yrs · {sim.assumptions.return_rate}% return
+                    ₹
+                    {Number(sim.assumptions.monthly_investment).toLocaleString(
+                      "en-IN",
+                    )}
+                    /mo · {sim.assumptions.years} yrs ·{" "}
+                    {sim.assumptions.return_rate}% return
                   </p>
                   <p className="text-xs text-gray-400">
-                    Future value: ₹{Number(sim.results.future_value).toLocaleString("en-IN")}
+                    Future value: ₹
+                    {Number(sim.results.future_value).toLocaleString("en-IN")}
                   </p>
                 </div>
                 <div className="flex gap-2">
@@ -180,7 +206,7 @@ export default function Simulation() {
           <h2 className="font-semibold text-lg">Parameters</h2>
 
           <input
-            placeholder="Scenario Name (optional)"
+            placeholder="Scenario Name"
             value={scenarioName}
             onChange={(e) => setScenarioName(e.target.value)}
             className="w-full p-3 rounded-xl bg-gray-100 outline-none"
@@ -254,13 +280,43 @@ export default function Simulation() {
                   <AreaChart data={chartData}>
                     <CartesianGrid strokeDasharray="3 3" />
                     <XAxis dataKey="year" />
-                    <YAxis tickFormatter={(val) => `₹${(val / 1000).toFixed(0)}k`} />
-                    <Tooltip formatter={(val) => `₹${Number(val).toLocaleString("en-IN")}`} />
+                    <YAxis
+                      tickFormatter={(val) => `₹${(val / 1000).toFixed(0)}k`}
+                    />
+                    <Tooltip
+                      formatter={(val) =>
+                        `₹${Number(val).toLocaleString("en-IN")}`
+                      }
+                    />
                     <Legend />
-                    <Area type="monotone" dataKey="invested" stroke="#6b7280" fillOpacity={0.1} name="Invested" />
-                    <Area type="monotone" dataKey="conservative" stroke="#3b82f6" fillOpacity={0.1} name="Conservative (8%)" />
-                    <Area type="monotone" dataKey="moderate" stroke="#10b981" fillOpacity={0.2} name="Moderate (12%)" />
-                    <Area type="monotone" dataKey="aggressive" stroke="#f59e0b" fillOpacity={0.2} name="Aggressive (15%)" />
+                    <Area
+                      type="monotone"
+                      dataKey="invested"
+                      stroke="#6b7280"
+                      fillOpacity={0.1}
+                      name="Invested"
+                    />
+                    <Area
+                      type="monotone"
+                      dataKey="conservative"
+                      stroke="#3b82f6"
+                      fillOpacity={0.1}
+                      name="Conservative (8%)"
+                    />
+                    <Area
+                      type="monotone"
+                      dataKey="moderate"
+                      stroke="#10b981"
+                      fillOpacity={0.2}
+                      name="Moderate (12%)"
+                    />
+                    <Area
+                      type="monotone"
+                      dataKey="aggressive"
+                      stroke="#f59e0b"
+                      fillOpacity={0.2}
+                      name="Aggressive (15%)"
+                    />
                   </AreaChart>
                 </ResponsiveContainer>
               </div>

@@ -175,7 +175,7 @@ export default function Goals() {
             </select>
 
             <input
-              placeholder="Goal Name (optional)"
+              placeholder="Goal Name *"
               value={form.name}
               onChange={(e) => setForm({ ...form, name: e.target.value })}
               className="w-full p-3 bg-gray-100 rounded-xl"

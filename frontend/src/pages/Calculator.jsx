@@ -4,7 +4,6 @@ import { PiggyBank, Calculator as CalcIcon, CreditCard } from "lucide-react";
 export default function Calculator() {
   const [tab, setTab] = useState("sip");
 
-  // SIP
   const [sip, setSip] = useState({
     monthly: 5000,
     years: 10,
@@ -12,7 +11,6 @@ export default function Calculator() {
   });
   const [sipResult, setSipResult] = useState(null);
 
-  // RETIREMENT
   const [ret, setRet] = useState({
     age: 30,
     retireAge: 60,
@@ -23,7 +21,6 @@ export default function Calculator() {
   });
   const [retResult, setRetResult] = useState(null);
 
-  // LOAN
   const [loan, setLoan] = useState({
     amount: 250000,
     rate: 7,
@@ -31,7 +28,6 @@ export default function Calculator() {
   });
   const [loanResult, setLoanResult] = useState(null);
 
-  // TAB SWITCH RESET
   const handleTabChange = (key) => {
     setTab(key);
     setSipResult(null);
@@ -39,7 +35,6 @@ export default function Calculator() {
     setLoanResult(null);
   };
 
-  // SIP CALC
   const calcSIP = () => {
     const r = sip.rate / 100 / 12;
     const n = sip.years * 12;
@@ -57,7 +52,6 @@ export default function Calculator() {
     });
   };
 
-  // RETIREMENT CALC
   const calcRet = () => {
     const years = ret.retireAge - ret.age;
     const r = ret.rate / 100 / 12;
@@ -78,7 +72,6 @@ export default function Calculator() {
     });
   };
 
-  // LOAN CALC
   const calcLoan = () => {
     const r = loan.rate / 100 / 12;
     const n = loan.years * 12;
@@ -97,23 +90,23 @@ export default function Calculator() {
   };
 
   return (
-    <div className="p-6 space-y-6 bg-gray-50 min-h-screen">
+    <div className="p-6 bg-gray-50 h-[calc(100vh-64px)] overflow-hidden flex flex-col">
 
       {/* HEADER */}
-      <div>
+      <div className="mb-4">
         <h1 className="text-3xl font-bold">Financial Calculators</h1>
-        <p className="text-gray-500 mt-1">
-          Plan your finances with powerful calculation tools
+        <p className="text-gray-500">
+          Plan your finances with powerful tools
         </p>
       </div>
 
       {/* TABS */}
-      <div className="bg-gray-100 p-1 rounded-full flex gap-2 max-w-2xl">
+      <div className="bg-gray-100 p-1 rounded-full flex gap-2 max-w-2xl mb-4">
         {[
-          { key: "sip", label: "SIP Calculator", icon: PiggyBank },
+          { key: "sip", label: "SIP", icon: PiggyBank },
           { key: "ret", label: "Retirement", icon: CalcIcon },
-          { key: "loan", label: "Loan Payoff", icon: CreditCard },
-        ].map(({ key, label  }) => (
+          { key: "loan", label: "Loan", icon: CreditCard },
+        ].map(({ key, label, icon: Icon }) => (
           <button
             key={key}
             onClick={() => handleTabChange(key)}
@@ -129,24 +122,22 @@ export default function Calculator() {
         ))}
       </div>
 
-      {/* MAIN GRID */}
-      <div className="grid md:grid-cols-2 gap-6">
+      {/* MAIN CONTENT */}
+      <div className="flex-1 grid md:grid-cols-2 gap-6 overflow-hidden">
 
-        {/* LEFT SIDE */}
-        <div className="bg-white rounded-2xl shadow-sm p-6">
+        {/* LEFT */}
+        <div className="bg-white rounded-2xl shadow-sm p-6 flex flex-col justify-between">
 
-          {/* SIP */}
           {tab === "sip" && (
             <>
-              <h2 className="font-semibold text-lg mb-4">SIP Calculator</h2>
-
               <div className="space-y-4">
+                <h2 className="font-semibold text-lg">SIP Calculator</h2>
+
                 <input
                   type="number"
                   value={sip.monthly}
                   onChange={(e) => setSip({ ...sip, monthly: e.target.value })}
                   className="w-full p-3 bg-gray-100 rounded-xl"
-                  placeholder="Monthly Investment"
                 />
 
                 <input
@@ -154,7 +145,6 @@ export default function Calculator() {
                   value={sip.years}
                   onChange={(e) => setSip({ ...sip, years: e.target.value })}
                   className="w-full p-3 bg-gray-100 rounded-xl"
-                  placeholder="Years"
                 />
 
                 <input
@@ -162,169 +152,105 @@ export default function Calculator() {
                   value={sip.rate}
                   onChange={(e) => setSip({ ...sip, rate: e.target.value })}
                   className="w-full p-3 bg-gray-100 rounded-xl"
-                  placeholder="Return %"
                 />
-
-                <button
-                  onClick={calcSIP}
-                  className="w-full bg-blue-600 text-white py-3 rounded-xl"
-                >
-                  Calculate
-                </button>
               </div>
+
+              <button
+                onClick={calcSIP}
+                className="mt-4 bg-emerald-600 hover:bg-emerald-700 text-white py-3 rounded-xl"
+              >
+                Calculate
+              </button>
             </>
           )}
 
-          {/* RETIREMENT */}
           {tab === "ret" && (
             <>
-              <h2 className="font-semibold text-lg mb-4">Retirement Calculator</h2>
-
               <div className="grid grid-cols-2 gap-4">
-                <input
-                  value={ret.age}
-                  onChange={(e) => setRet({ ...ret, age: e.target.value })}
-                  className="p-3 bg-gray-100 rounded-xl"
-                  placeholder="Current Age"
-                />
-
-                <input
-                  value={ret.retireAge}
-                  onChange={(e) => setRet({ ...ret, retireAge: e.target.value })}
-                  className="p-3 bg-gray-100 rounded-xl"
-                  placeholder="Retirement Age"
-                />
-
-                <input
-                  value={ret.savings}
-                  onChange={(e) => setRet({ ...ret, savings: e.target.value })}
-                  className="col-span-2 p-3 bg-gray-100 rounded-xl"
-                  placeholder="Savings"
-                />
-
-                <input
-                  value={ret.monthly}
-                  onChange={(e) => setRet({ ...ret, monthly: e.target.value })}
-                  className="col-span-2 p-3 bg-gray-100 rounded-xl"
-                  placeholder="Monthly Contribution"
-                />
-
-                <input
-                  value={ret.rate}
-                  onChange={(e) => setRet({ ...ret, rate: e.target.value })}
-                  className="p-3 bg-gray-100 rounded-xl"
-                  placeholder="Return %"
-                />
-
-                <input
-                  value={ret.inflation}
-                  onChange={(e) => setRet({ ...ret, inflation: e.target.value })}
-                  className="p-3 bg-gray-100 rounded-xl"
-                  placeholder="Inflation %"
-                />
-
-                <button
-                  onClick={calcRet}
-                  className="col-span-2 bg-blue-600 text-white py-3 rounded-xl"
-                >
-                  Calculate
-                </button>
+                <input value={ret.age} onChange={(e) => setRet({ ...ret, age: e.target.value })} className="p-3 bg-gray-100 rounded-xl" />
+                <input value={ret.retireAge} onChange={(e) => setRet({ ...ret, retireAge: e.target.value })} className="p-3 bg-gray-100 rounded-xl" />
+                <input value={ret.savings} onChange={(e) => setRet({ ...ret, savings: e.target.value })} className="col-span-2 p-3 bg-gray-100 rounded-xl" />
+                <input value={ret.monthly} onChange={(e) => setRet({ ...ret, monthly: e.target.value })} className="col-span-2 p-3 bg-gray-100 rounded-xl" />
+                <input value={ret.rate} onChange={(e) => setRet({ ...ret, rate: e.target.value })} className="p-3 bg-gray-100 rounded-xl" />
+                <input value={ret.inflation} onChange={(e) => setRet({ ...ret, inflation: e.target.value })} className="p-3 bg-gray-100 rounded-xl" />
               </div>
+
+              <button
+                onClick={calcRet}
+                className="mt-4 bg-emerald-600 hover:bg-emerald-700 text-white py-3 rounded-xl"
+              >
+                Calculate
+              </button>
             </>
           )}
 
-          {/* LOAN */}
           {tab === "loan" && (
             <>
-              <h2 className="font-semibold text-lg mb-4">Loan Payoff Calculator</h2>
-
               <div className="space-y-4">
-                <input
-                  value={loan.amount}
-                  onChange={(e) => setLoan({ ...loan, amount: e.target.value })}
-                  className="p-3 bg-gray-100 rounded-xl"
-                  placeholder="Loan Amount"
-                />
-
-                <input
-                  value={loan.rate}
-                  onChange={(e) => setLoan({ ...loan, rate: e.target.value })}
-                  className="p-3 bg-gray-100 rounded-xl"
-                  placeholder="Interest %"
-                />
-
-                <input
-                  value={loan.years}
-                  onChange={(e) => setLoan({ ...loan, years: e.target.value })}
-                  className="p-3 bg-gray-100 rounded-xl"
-                  placeholder="Years"
-                />
-
-                <button
-                  onClick={calcLoan}
-                  className="bg-blue-600 text-white py-3 rounded-xl w-full"
-                >
-                  Calculate
-                </button>
+                <input value={loan.amount} onChange={(e) => setLoan({ ...loan, amount: e.target.value })} className="p-3 bg-gray-100 rounded-xl" />
+                <input value={loan.rate} onChange={(e) => setLoan({ ...loan, rate: e.target.value })} className="p-3 bg-gray-100 rounded-xl" />
+                <input value={loan.years} onChange={(e) => setLoan({ ...loan, years: e.target.value })} className="p-3 bg-gray-100 rounded-xl" />
               </div>
+
+              <button
+                onClick={calcLoan}
+                className="mt-4 bg-emerald-600 hover:bg-emerald-700 text-white py-3 rounded-xl"
+              >
+                Calculate
+              </button>
             </>
           )}
         </div>
 
-        {/* RIGHT SIDE (ONLY AFTER CALCULATION) */}
-        {(sipResult || retResult || loanResult) && (
-          <div className="bg-white rounded-2xl shadow-sm p-6 space-y-4">
-            <h2 className="font-semibold text-lg">Results</h2>
+        {/* RIGHT */}
+        <div className="bg-white rounded-2xl shadow-sm p-6 flex flex-col justify-center">
 
-            {/* SIP */}
-            {tab === "sip" && sipResult && (
-              <>
-                <div className="p-4 bg-blue-50 rounded-xl">
-                  Total: ₹{sipResult.total.toLocaleString()}
-                </div>
-                <div className="p-4 bg-gray-100 rounded-xl">
-                  Invested: ₹{sipResult.invested.toLocaleString()}
-                </div>
-                <div className="p-4 bg-green-50 rounded-xl text-green-600">
-                  Returns: ₹{sipResult.returns.toLocaleString()}
-                </div>
-              </>
-            )}
+          {!sipResult && !retResult && !loanResult && (
+            <p className="text-gray-400 text-center">
+              Results will appear here
+            </p>
+          )}
 
-            {/* RETIREMENT */}
-            {tab === "ret" && retResult && (
-              <>
-                <div className="p-4 bg-purple-50 border rounded-xl">
-                  <p>Retirement Corpus</p>
-                  <h3 className="text-2xl font-bold text-purple-600">
-                    ₹{retResult.total.toLocaleString()}
-                  </h3>
-                </div>
+          {tab === "sip" && sipResult && (
+            <div className="space-y-3">
+              <div className="p-4 bg-blue-50 rounded-xl">
+                ₹{sipResult.total.toLocaleString()}
+              </div>
+              <div className="p-4 bg-gray-100 rounded-xl">
+                ₹{sipResult.invested.toLocaleString()}
+              </div>
+              <div className="p-4 bg-green-50 rounded-xl text-green-600">
+                ₹{sipResult.returns.toLocaleString()}
+              </div>
+            </div>
+          )}
 
-                <div className="p-4 bg-gray-100 rounded-xl">
-                  ₹{retResult.contributions.toLocaleString()}
-                </div>
+          {tab === "ret" && retResult && (
+            <div className="space-y-3">
+              <div className="p-4 bg-purple-50 rounded-xl font-bold text-purple-600">
+                ₹{retResult.total.toLocaleString()}
+              </div>
+              <div className="p-4 bg-gray-100 rounded-xl">
+                ₹{retResult.contributions.toLocaleString()}
+              </div>
+              <div className="p-4 bg-green-50 rounded-xl text-green-600">
+                ₹{retResult.growth.toLocaleString()}
+              </div>
+            </div>
+          )}
 
-                <div className="p-4 bg-green-50 rounded-xl text-green-600">
-                  ₹{retResult.growth.toLocaleString()}
-                </div>
-              </>
-            )}
+          {tab === "loan" && loanResult && (
+            <div className="space-y-3">
+              <div className="p-4 bg-blue-50 rounded-xl">
+                EMI ₹{loanResult.emi.toFixed(0)}
+              </div>
+              <div className="p-4 bg-red-50 rounded-xl text-red-600">
+                ₹{loanResult.interest.toFixed(0)}
+              </div>
+            </div>
+          )}
 
-            {/* LOAN */}
-            {tab === "loan" && loanResult && (
-              <>
-                <div className="p-4 bg-blue-50 rounded-xl">
-                  EMI: ₹{loanResult.emi.toFixed(0)}
-                </div>
-                <div className="p-4 bg-red-50 rounded-xl text-red-600">
-                  Interest: ₹{loanResult.interest.toFixed(0)}
-                </div>
-              </>
-            )}
-          </div>
-        )}
-
+        </div>
       </div>
     </div>
   );

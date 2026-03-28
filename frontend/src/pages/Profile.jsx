@@ -137,7 +137,7 @@ export default function Profile() {
     : `${BASE_URL}/${user.profile_picture}`;
 
   return (
-    <div className="bg-gray-50 min-h-screen">
+    <div className="bg-gray-50 h-[calc(100vh-64px)] overflow-hidden">
       <div className="max-w-7xl mx-auto p-6 space-y-8">
 
         {/* HEADER */}

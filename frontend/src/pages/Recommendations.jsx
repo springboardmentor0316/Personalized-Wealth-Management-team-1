@@ -63,17 +63,25 @@ export default function Recommendations() {
       : data.risk_profile || "Unknown";
 
   return (
-    <div className="p-6 bg-gray-50 min-h-screen">
+    <div
+      className={`p-6 bg-gray-50 ${
+        showHistory
+          ? "min-h-screen overflow-y-auto"
+          : "h-[calc(100vh-64px)] overflow-hidden"
+      }`}
+    >
       <div className="max-w-6xl mx-auto space-y-6">
-
         {/* HEADER */}
         <div className="flex justify-between items-center">
-          <h1 className="text-3xl font-bold">
-            Investment Recommendations
-          </h1>
+          <h1 className="text-3xl font-bold">Investment Recommendations</h1>
 
           <button
-            onClick={() => setShowHistory(!showHistory)}
+            onClick={() => {
+              setShowHistory(!showHistory);
+              setTimeout(() => {
+                window.scrollTo({ top: 200, behavior: "smooth" });
+              }, 100);
+            }}
             className="flex items-center gap-2 bg-white border px-4 py-2 rounded-xl shadow-sm text-sm"
           >
             <History size={16} />
@@ -84,9 +92,7 @@ export default function Recommendations() {
         {/* HISTORY */}
         {showHistory && (
           <div className="bg-white rounded-2xl shadow-sm p-6 space-y-3">
-            <h2 className="font-semibold text-lg">
-              Recommendation History
-            </h2>
+            <h2 className="font-semibold text-lg">Recommendation History</h2>
 
             {history.length === 0 ? (
               <p className="text-gray-400">No history yet</p>
@@ -113,7 +119,7 @@ export default function Recommendations() {
                           <span className="text-gray-500">{k}:</span>{" "}
                           <span className="font-semibold">{v}%</span>
                         </p>
-                      )
+                      ),
                     )}
                   </div>
                 </div>
@@ -125,25 +131,19 @@ export default function Recommendations() {
         {/* RISK PROFILE */}
         <div className="bg-white p-6 rounded-2xl shadow-sm">
           <p className="text-gray-500 text-sm">Your Risk Profile</p>
-          <h2 className="text-2xl font-bold capitalize mt-1">
-            {riskValue}
-          </h2>
+          <h2 className="text-2xl font-bold capitalize mt-1">{riskValue}</h2>
           <p className="text-gray-500 mt-2">
             {data.advice || "No advice available"}
           </p>
         </div>
 
         {/* MAIN GRID */}
-        <div className="grid md:grid-cols-2 gap-6">
-
+        <div className="grid md:grid-cols-2 gap-6 items-stretch">
           {/* LEFT SIDE */}
-          <div className="space-y-6">
-
+          <div className="flex flex-col gap-6 h-full">
             {/* CURRENT */}
-            <div className="bg-white p-6 rounded-2xl shadow-sm">
-              <h2 className="text-lg font-semibold mb-4">
-                Current Allocation
-              </h2>
+            <div className="bg-white p-6 rounded-2xl shadow-sm flex-1">
+              <h2 className="text-lg font-semibold mb-4">Current Allocation</h2>
 
               {Object.entries(current).map(([key, value]) => (
                 <p key={key} className="capitalize">
@@ -153,7 +153,7 @@ export default function Recommendations() {
             </div>
 
             {/* REBALANCE */}
-            <div className="bg-white p-6 rounded-2xl shadow-sm">
+            <div className="bg-white p-6 rounded-2xl shadow-sm flex-1">
               <h2 className="text-lg font-semibold mb-4">
                 Rebalancing Suggestions
               </h2>
@@ -163,22 +163,21 @@ export default function Recommendations() {
                   {value > 0
                     ? `Increase ${key} by ${value}%`
                     : value < 0
-                    ? `Reduce ${key} by ${Math.abs(value)}%`
-                    : `No change in ${key}`}
+                      ? `Reduce ${key} by ${Math.abs(value)}%`
+                      : `No change in ${key}`}
                 </p>
               ))}
             </div>
-
           </div>
 
-          {/* RIGHT SIDE (PIE CHART) */}
+          {/* RIGHT SIDE */}
           {chartData.length > 0 && (
-            <div className="bg-white p-6 rounded-2xl shadow-sm">
+            <div className="bg-white p-6 rounded-2xl shadow-sm h-full flex flex-col">
               <h2 className="text-lg font-semibold mb-4">
                 Ideal Allocation 📊
               </h2>
 
-              <div className="h-80">
+              <div className="flex-1 flex items-center justify-center">
                 <ResponsiveContainer>
                   <PieChart>
                     <Pie
@@ -186,9 +185,7 @@ export default function Recommendations() {
                       dataKey="value"
                       nameKey="name"
                       outerRadius={120}
-                      label={({ name, value }) =>
-                        `${name}: ${value}%`
-                      }
+                      label={({ name, value }) => `${name}: ${value}%`}
                     >
                       {chartData.map((_, index) => (
                         <Cell
@@ -203,7 +200,6 @@ export default function Recommendations() {
               </div>
             </div>
           )}
-
         </div>
       </div>
     </div>
